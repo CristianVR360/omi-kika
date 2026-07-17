@@ -1,0 +1,8 @@
+# Ignore heavy original images (> 1MB)
+**/originales/
+**/Originales/
+
+# OS metadata files
+.DS_Store
+Thumbs.db
+Desktop.ini

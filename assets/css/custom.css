@@ -1,0 +1,411 @@
+/* =============================================
+   OMIKIKA B&B - Custom Styles
+   ============================================= */
+
+/* ----- Color Palette (from logo) ----- */
+:root {
+    --omikika-terracotta: #C17F59;
+    --omikika-terracotta-dark: #A56843;
+    --omikika-green-olive: #8B9A6B;
+    --omikika-green-dark: #6B7A4B;
+    --omikika-pink: #E8B4B8;
+    --omikika-warm-cream: #FDF5E6;
+    --omikika-dark-wood: #3E2723;
+    --omikika-gold: #D4A76A;
+}
+
+/* ----- Override template accent colors ----- */
+.btn_1,
+a.btn_1 {
+    background-color: var(--omikika-terracotta);
+    border-color: var(--omikika-terracotta);
+}
+.btn_1:hover,
+a.btn_1:hover {
+    background-color: var(--omikika-terracotta-dark);
+    border-color: var(--omikika-terracotta-dark);
+}
+
+.btn_1.outline {
+    background: transparent;
+    color: var(--omikika-terracotta);
+    border-color: var(--omikika-terracotta);
+}
+.btn_1.outline:hover {
+    background-color: var(--omikika-terracotta);
+    color: #fff;
+}
+.btn_1.outline.white {
+    color: #fff;
+    border-color: #fff;
+}
+.btn_1.outline.white:hover {
+    background-color: var(--omikika-terracotta);
+    border-color: var(--omikika-terracotta);
+    color: #fff;
+}
+
+/* ----- Title accents ----- */
+.title small {
+    color: var(--omikika-terracotta) !important;
+}
+.title small::before,
+.title small::after {
+    background-color: var(--omikika-terracotta) !important;
+}
+
+/* ----- Marquee ----- */
+.marquee .track .content {
+    color: var(--omikika-warm-cream);
+    opacity: 0.15;
+}
+
+/* ----- Scrollbar accent ----- */
+::-webkit-scrollbar-thumb {
+    background: var(--omikika-terracotta);
+}
+
+/* ----- Logo adjustments ----- */
+header .col-3 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.logo_normal img,
+.logo_sticky img {
+    object-fit: contain;
+    height: 70px !important;
+    max-height: 70px !important;
+    width: auto !important;
+    transition: all 0.3s ease-in-out;
+}
+
+@media (max-width: 991px) {
+    .logo_normal img,
+    .logo_sticky img {
+        height: 55px !important;
+        max-height: 55px !important;
+    }
+}
+
+/* Large logo inside the hero slider (Slide 1) */
+.hero-logo {
+    max-width: 420px;
+    height: auto;
+    display: inline-block;
+}
+
+/* Prevent owl carousel from stretching the hero logo to 100% width */
+#carousel-home .owl-carousel .owl-item img.hero-logo {
+    width: auto !important;
+    display: inline-block !important;
+}
+
+@media (max-width: 767px) {
+    .hero-logo {
+        max-width: 260px;
+    }
+}
+
+/* ----- Badges ----- */
+.badge.bg-omikika {
+    background-color: var(--omikika-terracotta) !important;
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+}
+.badge.bg-omikika-gold {
+    background: linear-gradient(135deg, var(--omikika-gold), var(--omikika-terracotta)) !important;
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+}
+
+/* ----- Room Detail Styles ----- */
+.room_detail_header h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--omikika-dark-wood);
+}
+
+.room_feat_list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.room_feat_list ul li {
+    background: var(--omikika-warm-cream);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--omikika-dark-wood);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.room_feat_list ul li i {
+    color: var(--omikika-terracotta);
+    font-size: 0.85rem;
+}
+
+.room_details_amenities h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--omikika-dark-wood);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.room_details_amenities h6 i {
+    color: var(--omikika-terracotta);
+}
+
+.room_amenities_list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.room_amenities_list li {
+    font-size: 0.85rem;
+    color: #666;
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+}
+.room_amenities_list li::before {
+    content: "·";
+    position: absolute;
+    left: 4px;
+    color: var(--omikika-terracotta);
+    font-weight: bold;
+}
+
+/* ----- Room detail carousel ----- */
+.carousel_room_detail .item img {
+    width: 100%;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+.carousel_room_detail .owl-nav button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.9) !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+.carousel_room_detail .owl-nav button:hover {
+    background: var(--omikika-terracotta) !important;
+    color: #fff !important;
+}
+.carousel_room_detail .owl-nav .owl-prev {
+    left: 15px;
+}
+.carousel_room_detail .owl-nav .owl-next {
+    right: 15px;
+}
+.carousel_room_detail .owl-dots {
+    margin-top: 15px;
+    text-align: center;
+}
+.carousel_room_detail .owl-dots .owl-dot span {
+    background: #ccc;
+}
+.carousel_room_detail .owl-dots .owl-dot.active span {
+    background: var(--omikika-terracotta);
+}
+
+@media (max-width: 991px) {
+    .carousel_room_detail .item img {
+        height: 300px;
+    }
+}
+
+/* ----- Horizontal rule ----- */
+hr.large {
+    border: none;
+    border-top: 1px solid #e8e3de;
+    margin: 0 auto;
+    max-width: 80%;
+}
+
+/* ----- Hero Rooms Page ----- */
+.hero_in {
+    height: 50vh;
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background-size: cover !important;
+    background-position: center !important;
+}
+.hero_in .wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* ----- Footer accent ----- */
+footer .social ul li a:hover {
+    color: var(--omikika-terracotta) !important;
+}
+
+/* ----- List OK style ----- */
+.list_ok {
+    list-style: none;
+    padding: 0;
+}
+.list_ok li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+.list_ok li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--omikika-terracotta);
+    font-weight: bold;
+}
+
+/* ----- Progress wrap accent ----- */
+.progress-wrap::after {
+    color: var(--omikika-terracotta);
+}
+.progress-wrap svg.progress-circle path {
+    stroke: var(--omikika-terracotta);
+}
+
+/* ----- Preloader accent ----- */
+[data-loader="circle-side"] {
+    border-top-color: var(--omikika-terracotta) !important;
+}
+
+/* ----- Box Cat Rooms Info hover ----- */
+.box_cat_rooms figure .info small {
+    color: var(--omikika-warm-cream) !important;
+}
+
+/* ----- Testimonials fix (no avatar) ----- */
+.box_overlay {
+    padding: 35px 35px 30px 35px !important;
+    min-height: auto !important;
+}
+.box_overlay .pic {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    margin-bottom: 12px !important;
+}
+.box_overlay .pic h4 {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+}
+.box_overlay .pic h4 small {
+    display: inline-block !important;
+    margin-left: 12px !important;
+    margin-top: 0 !important;
+    color: var(--omikika-gold) !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+}
+.box_overlay .comment {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    font-style: italic !important;
+}
+
+/* ----- Phone element ----- */
+.phone_element a span em {
+    color: var(--omikika-terracotta);
+}
+
+/* ----- Smooth scroll ----- */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ----- Selection color ----- */
+::selection {
+    background: var(--omikika-terracotta);
+    color: #fff;
+}
+
+/* ----- Background light override ----- */
+.bg-light {
+    background-color: var(--omikika-warm-cream) !important;
+    border: 1px solid rgba(193, 127, 89, 0.15);
+}
+
+/* ----- Platform Brand Grid (Parallax) ----- */
+.brand-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+.brand-item {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 30px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: inline-block;
+    min-width: 130px;
+    text-align: center;
+}
+.brand-item:hover {
+    background: #fff;
+    color: var(--omikika-dark-wood) !important;
+    border-color: #fff;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 575px) {
+    .brand-item {
+        min-width: 110px;
+        font-size: 0.85rem;
+        padding: 8px 16px;
+    }
+}
+
+/* ----- Responsive Maps Wrapper ----- */
+.map-responsive {
+    overflow: hidden;
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
