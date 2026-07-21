@@ -1,6 +1,19 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Vercel
+.vercel
+
 # Ignore heavy original images (> 1MB)
 **/originales/
 **/Originales/
+
+# Large mockup files
+*.sketch
 
 # OS metadata files
 .DS_Store

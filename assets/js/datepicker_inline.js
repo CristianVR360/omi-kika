@@ -1,77 +1,142 @@
-$(function() {
-      "use strict";
+document.addEventListener('DOMContentLoaded', () => {
+  "use strict";
 
-      //Datepicker v1 embedded - https://www.daterangepicker.com/
-      /* var picker = $('#date_booking').daterangepicker({
-        parentEl: '#daterangepicker-embedded-container',
-        autoUpdateInput: false,
-        autoApply :true,
-        alwaysShowCalendars:true
-      });
-      // range update listener
-      picker.on('apply.daterangepicker', function(ev, picker) {
-        $(this).val(picker.startDate.format('MM-DD-YY') + ' to ' + picker.endDate.format('MM-DD-YY'));
-      });
-      // prevent hide after range selection
-      picker.data('daterangepicker').hide = function () {};
-      // show picker on load
-      picker.data('daterangepicker').show();
-      */
+  const dateBookingEl = document.getElementById('date_booking');
+  if (!dateBookingEl || typeof easepick === 'undefined') return;
 
-      //Datepicker V2 embedded - - https://easepick.com/
-      $(function () {
-      /* Booked Dates */
-      const DateTime = easepick.DateTime;
-      const bookedDates = [
-        ['2023-09-01', '2023-09-04'],
-        '2023-09-07',
-        ['2023-10-11', '2023-10-17'],
-      ].map(d => {
-        if (d instanceof Array) {
-          const start = new DateTime(d[0], 'YYYY-MM-DD');
-          const end = new DateTime(d[1], 'YYYY-MM-DD');
+  const DateTime = easepick.DateTime;
+  let dynamicBookedDates = [];
 
-          return [start, end];
-        }
+  // Función para obtener las fechas reservadas o bloqueadas de la habitación seleccionada
+  async function fetchBookedDatesForRoom(roomName = '') {
+    try {
+      if (!roomName || roomName.includes('Seleccionar')) {
+        dynamicBookedDates = [];
+        return;
+      }
 
-        return new DateTime(d, 'YYYY-MM-DD');
-      });
+      const url = `/api/reservations/booked-dates?room_name=${encodeURIComponent(roomName)}`;
+      const res = await fetch(url);
+      const data = await res.json();
 
-      /* Configuration picker */
-      const picker = new easepick.create({
-        element: document.getElementById('date_booking'),
-        css: [
-          'assets/css/daterangepicker_v2.css',
-        ],
-        lang: 'en-EN', // Language tags https://www.techonthenet.com/js/language_tags.php
-        format: "DD/MM/YYYY",
-        calendars: 2,
-        grid: 2,
-        zIndex: 10,
-        inline: true,
-        plugins: ['LockPlugin', 'RangePlugin'],
-        RangePlugin: {
-          tooltipNumber(num) {
-            return num - 1;
-          },
-          locale: {
-            one: 'night',
-            other: 'nights',
-          },
-        },
-        LockPlugin: {
-          minDate: new Date(),
-          minDays: 1,
-          inseparable: false,
-          filter(date, picked) {
-            if (picked.length === 1) {
-              const incl = date.isBefore(picked[0]) ? '[)' : '(]';
-              return !picked[0].isSame(date, 'day') && date.inArray(bookedDates, incl);
-            }
-            return date.inArray(bookedDates, '[)');
+      if (data.success && Array.isArray(data.bookedDates)) {
+        dynamicBookedDates = data.bookedDates.map(d => {
+          if (Array.isArray(d)) {
+            return [new DateTime(d[0], 'YYYY-MM-DD'), new DateTime(d[1], 'YYYY-MM-DD')];
           }
-        },
-      });
+          return new DateTime(d, 'YYYY-MM-DD');
+        });
+      } else {
+        dynamicBookedDates = [];
+      }
+    } catch (err) {
+      console.error('Error al cargar fechas reservadas:', err);
+      dynamicBookedDates = [];
+    }
+  }
 
-    }); // End Easypick config
+  /* Configuración del Calendario Easepick */
+  const picker = new easepick.create({
+    element: dateBookingEl,
+    css: ['assets/css/daterangepicker_v2.css'],
+    lang: 'es-ES',
+    format: "YYYY-MM-DD",
+    calendars: 2,
+    grid: 2,
+    zIndex: 10,
+    inline: true,
+    plugins: ['LockPlugin', 'RangePlugin'],
+    RangePlugin: {
+      tooltipNumber(num) {
+        return num - 1;
+      },
+      locale: {
+        one: 'noche',
+        other: 'noches',
+      },
+    },
+    LockPlugin: {
+      minDate: new Date(),
+      minDays: 1,
+      inseparable: false,
+      filter(date, picked) {
+        if (picked && picked.length === 1) {
+          const incl = date.isBefore(picked[0]) ? '[)' : '(]';
+          return !picked[0].isSame(date, 'day') && date.inArray(dynamicBookedDates, incl);
+        }
+        return date.inArray(dynamicBookedDates, '[)');
+      }
+    },
   });
+
+  // Escuchar evento select de easepick para recalcular total
+  picker.on('select', (e) => {
+    calculateAndShowTotal();
+  });
+
+  // Función para calcular y mostrar el precio total
+  async function calculateAndShowTotal() {
+    const totalDisplay = document.getElementById('booking-total-display');
+    const totalValue = document.getElementById('booking-total-value');
+    const nightsCount = document.getElementById('booking-nights-count');
+    
+    if (!totalDisplay || !totalValue || !nightsCount) return;
+
+    const roomSelect = document.getElementById('room_select');
+    const roomName = roomSelect ? roomSelect.value : '';
+    
+    const startD = picker.getStartDate();
+    const endD = picker.getEndDate();
+
+    if (!startD || !endD || !roomName || roomName.includes('Seleccionar')) {
+      totalDisplay.style.display = 'none';
+      return;
+    }
+
+    const checkIn = startD.format('YYYY-MM-DD');
+    const checkOut = endD.format('YYYY-MM-DD');
+
+    try {
+      const url = `/api/reservations/calculate-price?room_name=${encodeURIComponent(roomName)}&check_in=${checkIn}&check_out=${checkOut}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.success && data.totalPrice !== undefined) {
+        totalValue.textContent = `$${Number(data.totalPrice).toLocaleString('es-CL')} CLP`;
+        nightsCount.textContent = `(${data.nights} ${data.nights === 1 ? 'noche' : 'noches'})`;
+        totalDisplay.style.display = 'block';
+      } else {
+        totalDisplay.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Error al calcular el precio total:', err);
+      totalDisplay.style.display = 'none';
+    }
+  }
+
+  // Función para actualizar la habitación activa y refrescar el calendario
+  async function updateCalendarForRoom(roomName) {
+    await fetchBookedDatesForRoom(roomName);
+    picker.clear();
+    picker.render();
+    calculateAndShowTotal();
+  }
+
+  // Escuchar cambios en el selector de habitación (Vanilla JS y jQuery NiceSelect)
+  const roomSelect = document.getElementById('room_select');
+  if (roomSelect) {
+    roomSelect.addEventListener('change', (e) => {
+      updateCalendarForRoom(e.target.value);
+    });
+
+    if (typeof $ !== 'undefined') {
+      $('#room_select').on('change', function() {
+        updateCalendarForRoom($(this).val());
+      });
+    }
+
+    if (roomSelect.value && !roomSelect.value.includes('Seleccionar')) {
+      updateCalendarForRoom(roomSelect.value);
+    }
+  }
+});
