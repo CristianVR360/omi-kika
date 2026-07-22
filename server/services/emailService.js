@@ -6,8 +6,8 @@ dotenv.config();
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'reserva@omikika.cl';
-const adminEmail = process.env.ADMIN_EMAIL || 'info@omikika.cl';
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'reservas@omikika.cl';
+const adminEmail = process.env.ADMIN_EMAIL || 'reservas@omikika.cl';
 
 /**
  * Envía el correo de confirmación de solicitud de reserva al Huésped

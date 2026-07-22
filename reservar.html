@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Reserva tu estancia en Omikika B&B. Elige tus fechas y reserva tu habitación online de forma rápida y segura.">
+    <meta name="author" content="Omikika B&B">
+    <title>Reservas — Omikika B&B</title>
+
+    <!-- Favicons-->
+    <link rel="shortcut icon" href="assets/img/fav.png" type="image/png">
+
+    <!-- GOOGLE WEB FONT-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- BASE CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="assets/css/vendors.min.css" rel="stylesheet">
+
+    <!-- YOUR CUSTOM CSS -->
+    <link href="assets/css/custom.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="preloader">
+        <div data-loader="circle-side"></div>
+    </div><!-- /Page Preload -->
+
+    <header class="fixed_header menu_v4 submenu_version">
+        <div class="layer"></div><!-- Opacity Mask -->
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-3">
+                    <a href="index.html" class="logo_normal"><img src="assets/img/logo-blanco.png" width="150" height="50" alt="Omikika B&B"></a>
+                    <a href="index.html" class="logo_sticky"><img src="assets/img/logo.png" width="150" height="50" alt="Omikika B&B"></a>
+                </div>
+                <div class="col-9">
+                    <div class="main-menu">
+                        <a href="#0" class="closebt open_close_menu"><i class="bi bi-x"></i></a>
+                        <div class="logo_panel"><img src="assets/img/logo.png" width="150" height="50" alt="Omikika B&B"></div>
+                        <nav id="mainNav">
+                            <ul>
+                                <li><a href="index.html">Inicio</a></li>
+                                <li><a href="habitaciones.html">Habitaciones</a></li>
+                                <li><a href="index.html#about_section">Nosotros</a></li>
+                                <li><a href="index.html#amenities_section">Servicios</a></li>
+                                <li><a href="reservar.html" class="btn_1 active">Reservar</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                    <div class="hamburger_2 open_close_menu float-end">
+                        <div class="hamburger__box">
+                            <div class="hamburger__inner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- container -->
+    </header><!-- End Header -->
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero_in" style="background: url('assets/img/hero/hero3.jpg') center center; background-size: cover;">
+            <div class="wrapper opacity-mask" data-opacity-mask="rgba(0, 0, 0, 0.5)">
+                <div class="container">
+                    <div class="main_info">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8 text-center">
+                                <small class="d-block mb-2" style="font-family: 'Caveat', cursive; font-size: 1.5rem; color: #C17F59;">Omikika B&B</small>
+                                <h1 class="text-white">Reservar Online</h1>
+                                <p class="text-white lead">Elige la habitación perfecta y tus fechas de estancia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- /Hero -->
+
+        <!-- Replicated Booking Form Container -->
+        <div class="container margin_120_95" id="booking_section">
+            <div class="row justify-content-between">
+                <div class="col-xl-4">
+                    <div data-cue="slideInUp">
+                        <div class="title">
+                            <small>Omikika B&B</small>
+                            <h2>Consultar Disponibilidad</h2>
+                        </div>
+                        <p>Reserva tu estancia en Omikika B&B y disfruta de un entorno natural único con todas las comodidades. Contáctanos para información y disponibilidad.</p>
+                        <p class="phone_element no_borders"><a href="tel:+56968365197"><i class="bi bi-telephone"></i><span><em>Información y reservas</em>+56 9 6836 5197</span></a></p>
+                        <p class="mt-2"><a href="mailto:reservas@omikika.cl"><i class="bi bi-envelope"></i> reservas@omikika.cl</a></p>
+                    </div>
+                </div>
+                <div class="col-xl-7">
+                    <div data-cue="slideInUp" data-delay="200">
+                        <div class="booking_wrapper">
+                            <div class="col-12">
+                                <input type="hidden" id="date_booking" name="date_booking">
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="custom_select">
+                                        <select class="wide" id="room_select">
+                                            <option>Seleccionar habitación</option>
+                                            <option>Apartamento - Planta baja (70 m²)</option>
+                                            <option>Habitación Doble (18 m²)</option>
+                                            <option>Habitación Doble Económica (12 m²)</option>
+                                            <option>Suite Executive (20 m²)</option>
+                                            <option>Habitación Triple Básica (18 m²)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="qty-buttons mb-3 version_2">
+                                                <input type="button" value="+" class="qtyplus" name="adults_booking">
+                                                <input type="text" name="adults_booking" id="adults_booking" value="" class="qty form-control" placeholder="Adultos">
+                                                <input type="button" value="-" class="qtyminus" name="adults_booking">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-3 qty-buttons mb-3 version_2">
+                                                <input type="button" value="+" class="qtyplus" name="childs_booking">
+                                                <input type="text" name="childs_booking" id="childs_booking" value="" class="qty form-control" placeholder="Niños">
+                                                <input type="button" value="-" class="qtyminus" name="childs_booking">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- / row -->
+                        
+                        <!-- Caja de Precio Total Reservas -->
+                        <div id="booking-total-display" style="display:none; text-align:center; font-weight:700; font-size:1.15rem; background-color:#ebf8ff; color:#2b6cb0; border:1px solid #bee3f8; padding:15px; border-radius:8px; margin-top: 20px;">
+                            Total Estimado: <span id="booking-total-value">$0 CLP</span> <span id="booking-nights-count" style="font-size:0.9rem; font-weight:500; color:#4a5568; margin-left: 5px;">(0 noches)</span>
+                        </div>
+
+                        <p class="text-end mt-4"><a href="#0" class="btn_1 outline" id="btn_book_now">Reservar ahora</a></p>
+                    </div>
+                </div>
+                <!-- /col -->
+            </div>
+            <!-- /row -->
+        </div>
+        <!-- /container -->
+    </main>
+
+    <footer class="revealed">
+        <div class="footer_bg">
+            <div class="gradient_over"></div>
+            <div class="background-image" data-background="url(assets/img/hero/hero2.jpg)"></div>
+        </div>
+        <div class="container">
+            <div class="row move_content">
+                <div class="col-lg-4 col-md-12">
+                    <h5>Contacto</h5>
+                    <ul>
+                        <li>Valentín Letelier 1055,<br>Villarrica, Chile<br><br></li>
+                        <li><strong><a href="mailto:reservas@omikika.cl">reservas@omikika.cl</a></strong></li>
+                        <li><strong><a href="tel:+56968365197">+56 9 6836 5197</a></strong></li>
+                    </ul>
+                    <div class="social">
+                        <ul>
+                            <li><a href="https://www.instagram.com/omikika_bb/" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a></li>
+                            <li><a href="https://wa.me/56968365197" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a></li>
+                            <li><a href="https://share.google/nORBHTJD4f2eX9nZ2" target="_blank" rel="noopener" aria-label="Google"><i class="bi bi-google"></i></a></li>
+                            <li><a href="#0" aria-label="Facebook"><i class="bi bi-facebook"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 ms-lg-auto">
+                    <h5>Explorar</h5>
+                    <div class="footer_links">
+                        <ul>
+                            <li><a href="index.html">Inicio</a></li>
+                            <li><a href="habitaciones.html">Habitaciones</a></li>
+                            <li><a href="index.html#about_section">Nosotros</a></li>
+                            <li><a href="index.html#amenities_section">Servicios</a></li>
+                            <li><a href="reservar.html">Reservar</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5>Políticas</h5>
+                    <div class="footer_links">
+                        <ul>
+                            <li>Política de no fumadores</li>
+                            <li>Entrada privada</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!--/row-->
+        </div>
+        <!--/container-->
+        <div class="copy">
+            <div class="container">
+                © Omikika B&B — Todos los derechos reservados
+            </div>
+        </div>
+    </footer>
+    <!-- /footer -->
+
+    <div class="progress-wrap">
+        <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+            <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
+        </svg>
+    </div>
+    <!-- /back to top -->
+
+    <!-- COMMON SCRIPTS -->
+    <script src="assets/js/common_scripts.js"></script>
+    <script src="assets/js/common_functions.js"></script>
+    <script src="assets/js/easepick.js"></script>
+    <script src="assets/js/datepicker_inline.js"></script>
+    <script src="assets/js/booking_handler.js"></script>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/56968365197" class="float-whatsapp" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
+        <i class="bi bi-whatsapp"></i>
+    </a>
+
+    <!-- Custom Script to preselect room from query param -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            const roomSelect = document.getElementById('room_select');
+            if (roomSelect && roomParam) {
+                let valueToSelect = '';
+                if (roomParam === 'apartamento') valueToSelect = 'Apartamento - Planta baja (70 m²)';
+                else if (roomParam === 'doble') valueToSelect = 'Habitación Doble (18 m²)';
+                else if (roomParam === 'economica') valueToSelect = 'Habitación Doble Económica (12 m²)';
+                else if (roomParam === 'suite') valueToSelect = 'Suite Executive (20 m²)';
+                else if (roomParam === 'triple') valueToSelect = 'Habitación Triple Básica (18 m²)';
+                
+                if (valueToSelect) {
+                    roomSelect.value = valueToSelect;
+                    roomSelect.dispatchEvent(new Event('change'));
+                    
+                    // Update NiceSelect display if jQuery is loaded
+                    if (typeof $ !== 'undefined') {
+                        $(roomSelect).val(valueToSelect).trigger('change');
+                        if ($.fn.niceSelect) {
+                            $(roomSelect).niceSelect('update');
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

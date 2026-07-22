@@ -384,6 +384,7 @@ html {
     display: inline-block;
     min-width: 130px;
     text-align: center;
+    text-decoration: none;
 }
 .brand-item:hover {
     background: #fff;
@@ -391,6 +392,7 @@ html {
     border-color: #fff;
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    text-decoration: none;
 }
 
 @media (max-width: 575px) {
@@ -408,4 +410,91 @@ html {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
+/* Floating WhatsApp Button */
+.float-whatsapp {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    bottom: 95px; /* Floats above the back-to-top button */
+    right: 30px;
+    background-color: #25d366;
+    color: #fff;
+    border-radius: 50px;
+    text-align: center;
+    font-size: 32px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.float-whatsapp:hover {
+    background-color: #128c7e;
+    color: #fff;
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.35);
+}
+@media (max-width: 991px) {
+    .float-whatsapp {
+        bottom: 30px; /* Moves down on mobile since progress-wrap is hidden */
+    }
+}
+
+/* Collapsible Room Cards */
+.room-card-header {
+    background-color: var(--omikika-warm-cream);
+    border: 1px solid rgba(193, 127, 89, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    user-select: none;
+}
+.room-card-header:hover {
+    border-color: var(--omikika-terracotta);
+    background-color: rgba(193, 127, 89, 0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(193, 127, 89, 0.08);
+}
+.room-card-header[aria-expanded="true"] {
+    background-color: rgba(193, 127, 89, 0.08);
+    border-color: var(--omikika-terracotta);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0 !important;
+}
+.room-card-header[aria-expanded="true"] + .collapse {
+    border: 1px solid var(--omikika-terracotta);
+    border-top: none;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(193, 127, 89, 0.08);
+}
+.room-card-header[aria-expanded="true"] .btn-toggle-details i {
+    transform: rotate(180deg);
+}
+.btn-toggle-details span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--omikika-terracotta);
+    display: inline-flex;
+    align-items: center;
+}
+.btn-toggle-details i {
+    transition: transform 0.3s ease;
+}
+.room-card-thumb {
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+}
+.room-card-header:hover .room-card-thumb {
+    transform: scale(1.03);
+}
+
+
+
 
