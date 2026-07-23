@@ -374,6 +374,37 @@ router.patch('/reservations/:id/status', requireAdminAuth, async (req, res) => {
 });
 
 /**
+ * DELETE /api/admin/reservations/:id
+ * Eliminar una reserva (Protegida)
+ */
+router.delete('/reservations/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error eliminando reserva en Supabase:', error);
+        return res.status(500).json({ error: 'No se pudo eliminar la reserva en la base de datos.' });
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'La reserva ha sido eliminada con éxito.'
+    });
+
+  } catch (err) {
+    console.error('Error eliminando reserva:', err);
+    return res.status(500).json({ error: 'Error interno al eliminar la reserva.' });
+  }
+});
+
+/**
  * GET /api/admin/stats
  * Métricas generales para las tarjetas KPI del Dashboard (Protegida)
  */

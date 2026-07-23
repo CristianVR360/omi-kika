@@ -1,0 +1,21 @@
+{
+  "name": "Omikika B&B",
+  "short_name": "Omikika",
+  "description": "Tu hogar junto al lago en Villarrica, Chile",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#C17F59",
+  "icons": [
+    {
+      "src": "assets/img/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/img/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

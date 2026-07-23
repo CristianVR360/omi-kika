@@ -75,7 +75,7 @@ router.post('/', async (req, res) => {
           .from('reservations')
           .select('id')
           .eq('room_id', targetRoomId)
-          .neq('status', 'cancelled')
+          .in('status', ['confirmed', 'blocked'])
           .lt('check_in', check_out)
           .gt('check_out', check_in);
 
@@ -192,7 +192,7 @@ router.get('/check-availability', async (req, res) => {
         .from('reservations')
         .select('id')
         .eq('room_id', room_id)
-        .neq('status', 'cancelled')
+        .in('status', ['confirmed', 'blocked'])
         .lt('check_in', check_out)
         .gt('check_out', check_in);
 
@@ -243,7 +243,7 @@ router.get('/booked-dates', async (req, res) => {
         .from('reservations')
         .select('check_in, check_out, room_id, status')
         .eq('room_id', targetRoomId)
-        .neq('status', 'cancelled');
+        .in('status', ['confirmed', 'blocked']);
 
       if (!error && data) {
         const bookedDates = data.map(r => [r.check_in, r.check_out]);

@@ -253,16 +253,21 @@ function renderTable(data) {
         <td style="font-weight: 700; color: #fff;">$${Number(res.total_price || 0).toLocaleString('es-CL')}</td>
         <td>${statusBadge}</td>
         <td>
-          ${res.status === 'pending' ? `
-            <button class="btn-action btn-confirm" data-id="${res.id}" data-action="confirmed">Confirmar</button>
-            <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
-          ` : res.status === 'confirmed' ? `
-            <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
-          ` : res.status === 'blocked' ? `
-            <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Desbloquear</button>
-          ` : `
-            <span style="font-size: 0.8rem; color: #94a3b8;">—</span>
-          `}
+          <div style="display: flex; flex-direction: column; gap: 5px; align-items: stretch;">
+            ${res.status === 'pending' ? `
+              <button class="btn-action btn-confirm" data-id="${res.id}" data-action="confirmed">Confirmar</button>
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
+            ` : res.status === 'confirmed' ? `
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
+            ` : res.status === 'blocked' ? `
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Desbloquear</button>
+            ` : `
+              <span style="font-size: 0.8rem; color: #94a3b8; text-align: center;">—</span>
+            `}
+            <button class="btn-action btn-delete" data-id="${res.id}" data-action="delete" style="background-color: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+              Eliminar
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -272,8 +277,12 @@ function renderTable(data) {
   tbody.querySelectorAll('.btn-action').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.getAttribute('data-id');
-      const newStatus = e.target.getAttribute('data-action');
-      updateStatus(id, newStatus);
+      const action = e.target.getAttribute('data-action');
+      if (action === 'delete') {
+        deleteReservation(id);
+      } else {
+        updateStatus(id, action);
+      }
     });
   });
 }
@@ -513,6 +522,28 @@ async function updateStatus(id, newStatus) {
     }
   } catch (err) {
     alert('No se pudo actualizar el estado de la reserva.');
+  }
+}
+
+async function deleteReservation(id) {
+  if (!confirm('¿Está seguro de eliminar esta reserva permanentemente? Esta acción no se puede deshacer.')) {
+    return;
+  }
+
+  try {
+    const res = await authFetch(`/api/admin/reservations/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      loadStats();
+      loadReservations();
+    } else {
+      alert(`Error: ${data.error}`);
+    }
+  } catch (err) {
+    alert('No se pudo eliminar la reserva.');
   }
 }
 
