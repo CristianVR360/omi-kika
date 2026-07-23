@@ -495,6 +495,46 @@ html {
     transform: scale(1.03);
 }
 
+/* Custom Plus / Minus Icons for Quantity Buttons */
+.qty-buttons button.qtyplus, 
+.qty-buttons.version_2 button.qtyplus {
+    background: #f5f5f5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23C17F59' viewBox='0 0 16 16'%3E%3Cpath d='M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z'/%3E%3C/svg%3E") no-repeat center center !important;
+    border: 1px solid rgba(193, 127, 89, 0.2) !important;
+    text-indent: -9999px;
+    overflow: hidden;
+}
+.qty-buttons button.qtyminus, 
+.qty-buttons.version_2 button.qtyminus {
+    background: #f5f5f5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23C17F59' viewBox='0 0 16 16'%3E%3Cpath d='M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z'/%3E%3C/svg%3E") no-repeat center center !important;
+    border: 1px solid rgba(193, 127, 89, 0.2) !important;
+    text-indent: -9999px;
+    overflow: hidden;
+}
+.qty-buttons button.qtyplus,
+.qty-buttons button.qtyminus {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    outline: none;
+    cursor: pointer;
+    border-radius: 50% !important;
+    top: 8px;
+    padding: 0;
+    line-height: 1;
+}
+.qty-buttons.version_2 button.qtyplus {
+    right: 5px;
+}
+.qty-buttons.version_2 button.qtyminus {
+    right: 40px;
+}
+.qty-buttons button.qtyplus:hover,
+.qty-buttons button.qtyminus:hover {
+    background-color: #e2e8f0 !important;
+    border-color: #C17F59 !important;
+}
+
+
 
 
 

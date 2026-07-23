@@ -58,7 +58,8 @@ router.post('/', async (req, res) => {
       if (room_id) {
         query = query.eq('id', room_id);
       } else if (room_name) {
-        query = query.ilike('name', `%${room_name}%`);
+        const cleanName = room_name.replace(/\s*\(\d+\s*m²\)/gi, '').trim();
+        query = query.ilike('name', `%${cleanName}%`);
       }
 
       const { data: roomsFound, error: roomError } = await query;

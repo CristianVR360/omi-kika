@@ -32,6 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal_summary_room').textContent = selectedRoom;
     document.getElementById('modal_summary_guests').textContent = `${adults} Adultos${children > 0 ? `, ${children} Niños` : ''}`;
 
+    // Sincronizar fechas seleccionadas del calendario con los inputs del modal
+    const checkInVal = getCheckInFromDateRange(dateValue);
+    const checkOutVal = getCheckOutFromDateRange(dateValue);
+    const modalCheckIn = document.getElementById('modal_check_in');
+    const modalCheckOut = document.getElementById('modal_check_out');
+    if (modalCheckIn && checkInVal) modalCheckIn.value = checkInVal;
+    if (modalCheckOut && checkOutVal) modalCheckOut.value = checkOutVal;
+
     // Desplegar Modal Bootstrap
     const modalEl = document.getElementById('bookingModal');
     const modal = new bootstrap.Modal(modalEl);
@@ -62,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const children = document.getElementById('childs_booking')?.value || 0;
 
       const payload = {
-        room_name: roomName,
+        room_name: roomName.replace(/\s*\(\d+\s*m²\)/gi, '').trim(),
         check_in: dateIn,
         check_out: dateOut,
         adults,

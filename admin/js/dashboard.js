@@ -177,7 +177,7 @@ async function loadReservations() {
   const tbody = document.getElementById('reservations-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando reservas...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando reservas...</td></tr>`;
 
   try {
     const params = new URLSearchParams({
@@ -192,7 +192,7 @@ async function loadReservations() {
     const result = await res.json();
 
     if (!result.success) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: #f87171; padding: 2rem;">Error: ${result.error}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">Error: ${result.error}</td></tr>`;
       return;
     }
 
@@ -201,8 +201,27 @@ async function loadReservations() {
 
   } catch (err) {
     console.error('Error cargando reservas:', err);
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: #f87171; padding: 2rem;">No se pudieron cargar los datos de reservas. (${err.message})</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">No se pudieron cargar los datos de reservas. (${err.message})</td></tr>`;
   }
+}
+
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr) return '—';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const day = parts[2].split('T')[0];
+    return `${day}/${parts[1]}/${parts[0]}`;
+  }
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  } catch (e) {}
+  return dateStr;
 }
 
 function renderTable(data) {
@@ -210,7 +229,7 @@ function renderTable(data) {
   if (!tbody) return;
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 2rem; color: #94a3b8;">No se encontraron reservas con los filtros aplicados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 2rem; color: #94a3b8;">No se encontraron reservas con los filtros aplicados.</td></tr>`;
     return;
   }
 
@@ -228,10 +247,8 @@ function renderTable(data) {
           <div style="font-size: 0.78rem; color: #94a3b8;">📞 ${escapeHtml(res.guest_phone)}</div>
         </td>
         <td><strong style="color: #f8fafc;">${escapeHtml(roomName)}</strong></td>
-        <td>
-          <div><strong style="color: #60a5fa;">In:</strong> ${res.check_in}</div>
-          <div><strong style="color: #f87171;">Out:</strong> ${res.check_out}</div>
-        </td>
+        <td><strong style="color: #60a5fa;">${formatDateDDMMYYYY(res.check_in)}</strong></td>
+        <td><strong style="color: #f87171;">${formatDateDDMMYYYY(res.check_out)}</strong></td>
         <td>${res.adults} Ad / ${res.children} Ni</td>
         <td style="font-weight: 700; color: #fff;">$${Number(res.total_price || 0).toLocaleString('es-CL')}</td>
         <td>${statusBadge}</td>
