@@ -259,16 +259,16 @@ function renderTable(data) {
         <td>${statusBadge}</td>
         <td>
           <div style="display: flex; flex-direction: column; gap: 5px; align-items: stretch;">
-            <button class="btn-action btn-edit" data-id="${res.id}" data-action="edit">✏️ Editar</button>
+            <button class="btn-action btn-edit" data-id="${res.id}" data-action="edit" onclick="window.handleReservationAction(event, '${res.id}', 'edit')">✏️ Editar</button>
             ${res.status === 'pending' ? `
-              <button class="btn-action btn-confirm" data-id="${res.id}" data-action="confirmed">Confirmar</button>
-              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
+              <button class="btn-action btn-confirm" data-id="${res.id}" data-action="confirmed" onclick="window.handleReservationAction(event, '${res.id}', 'confirmed')">Confirmar</button>
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled" onclick="window.handleReservationAction(event, '${res.id}', 'cancelled')">Cancelar</button>
             ` : res.status === 'confirmed' ? `
-              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled" onclick="window.handleReservationAction(event, '${res.id}', 'cancelled')">Cancelar</button>
             ` : res.status === 'blocked' ? `
-              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Desbloquear</button>
+              <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled" onclick="window.handleReservationAction(event, '${res.id}', 'cancelled')">Desbloquear</button>
             ` : ''}
-            <button class="btn-action btn-delete" data-id="${res.id}" data-action="delete" style="background-color: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <button class="btn-action btn-delete" data-id="${res.id}" data-action="delete" onclick="window.handleReservationAction(event, '${res.id}', 'delete')" style="background-color: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
               Eliminar
             </button>
           </div>
@@ -276,23 +276,27 @@ function renderTable(data) {
       </tr>
     `;
   }).join('');
-
-  // Listeners para botones de acción
-  tbody.querySelectorAll('.btn-action').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.target.getAttribute('data-id');
-      const action = e.target.getAttribute('data-action');
-      if (action === 'delete') {
-        deleteReservation(id);
-      } else if (action === 'edit') {
-        const item = currentReservationsList.find(r => r.id === id);
-        if (item) openEditModal(item);
-      } else {
-        updateStatus(id, action);
-      }
-    });
-  });
 }
+
+window.handleReservationAction = function(e, id, action) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+  if (action === 'delete') {
+    deleteReservation(id);
+  } else if (action === 'edit') {
+    const item = currentReservationsList.find(r => String(r.id) === String(id));
+    if (item) {
+      openEditModal(item);
+    } else {
+      console.warn('No se encontró reserva para editar con ID:', id, currentReservationsList);
+    }
+  } else {
+    updateStatus(id, action);
+  }
+};
+
 
 function renderPagination(pagination) {
   const infoSpan = document.getElementById('pagination-info');
@@ -971,14 +975,30 @@ function openEditModal(reservation) {
   if (idInp) idInp.value = reservation.id || '';
 
   const channelInp = document.getElementById('edit-channel');
-  if (channelInp) channelInp.value = reservation.channel || 'Reserva Directa';
+  if (channelInp && reservation.channel) {
+    let exists = Array.from(channelInp.options).some(opt => opt.value === reservation.channel);
+    if (!exists) {
+      const newOpt = document.createElement('option');
+      newOpt.value = reservation.channel;
+      newOpt.textContent = reservation.channel;
+      channelInp.appendChild(newOpt);
+    }
+    channelInp.value = reservation.channel;
+  }
 
   const statusInp = document.getElementById('edit-status');
   if (statusInp) statusInp.value = reservation.status || 'confirmed';
 
   const roomSelect = document.getElementById('edit-room');
-  if (roomSelect && reservation.room_id) {
-    roomSelect.value = reservation.room_id;
+  if (roomSelect) {
+    if (loadedRooms && loadedRooms.length > 0) {
+      roomSelect.innerHTML = loadedRooms.map(r => `
+        <option value="${r.id}">${r.name} (${r.size_m2 || 0}m² - Max ${r.capacity_adults} Adultos)</option>
+      `).join('');
+    }
+    if (reservation.room_id) {
+      roomSelect.value = reservation.room_id;
+    }
   }
 
   const checkinInp = document.getElementById('edit-checkin');
@@ -1010,6 +1030,8 @@ function openEditModal(reservation) {
 
   modal.style.display = 'flex';
 }
+
+window.openEditModal = openEditModal;
 
 function setupSettingsTab() {
   const selectRoom = document.getElementById('settings-room-select');

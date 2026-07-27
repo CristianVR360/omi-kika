@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { supabase } from '../config/supabase.js';
+import { supabase, hasSupabaseConfigured } from '../config/supabase.js';
 import { requireAdminAuth } from '../middleware/auth.js';
 import { sendStatusUpdateEmail } from '../services/emailService.js';
 
@@ -60,7 +60,7 @@ router.post('/login', async (req, res) => {
     }
 
     // 1. Intentar verificar con Supabase Auth si está configurado
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && !process.env.SUPABASE_URL.includes('placeholder')) {
+    if (hasSupabaseConfigured) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -126,7 +126,7 @@ router.get('/reservations', requireAdminAuth, async (req, res) => {
     const CHANNELS_DEMO = ['Sitio Web', 'Booking.com', 'Airbnb', 'Tripadvisor', 'Trivago', 'Agoda', 'Hostales.com', 'Kayak', 'Hostelworld', 'Reserva Directa'];
 
     // Si Supabase no está configurado, simulamos datos paginados de prueba
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    if (!hasSupabaseConfigured) {
       const mockReservations = Array.from({ length: 35 }).map((_, i) => ({
         id: `res-mock-${i + 1}`,
         channel: CHANNELS_DEMO[i % CHANNELS_DEMO.length],
@@ -280,7 +280,7 @@ router.post('/reservations', requireAdminAuth, async (req, res) => {
 
     let created = { ...newReservation, id: 'res-manual-' + Date.now(), created_at: new Date().toISOString() };
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('reservations')
         .insert([newReservation])
@@ -362,7 +362,7 @@ router.put('/reservations/:id', requireAdminAuth, async (req, res) => {
 
     let updatedReservation = { id, ...updates };
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('reservations')
         .update(updates)
@@ -410,7 +410,7 @@ router.patch('/reservations/:id/status', requireAdminAuth, async (req, res) => {
     let updatedReservation = null;
     let roomName = 'Habitación Omikika';
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('reservations')
         .update({ status, updated_at: new Date().toISOString() })
@@ -462,7 +462,7 @@ router.delete('/reservations/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { error } = await supabase
         .from('reservations')
         .delete()
@@ -491,7 +491,7 @@ router.delete('/reservations/:id', requireAdminAuth, async (req, res) => {
  */
 router.get('/stats', requireAdminAuth, async (req, res) => {
   try {
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase.from('reservations').select('status, total_price, channel');
       if (!error && data) {
         const total = data.length;
@@ -551,7 +551,7 @@ router.get('/guests', requireAdminAuth, async (req, res) => {
   try {
     let reservations = [];
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('reservations')
         .select('guest_name, guest_email, guest_phone, total_price, status, check_in');
@@ -642,7 +642,7 @@ router.patch('/rooms/:id', requireAdminAuth, async (req, res) => {
 
     let updated = null;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('rooms')
         .update(updates)
@@ -703,7 +703,7 @@ router.post('/rooms/:id/prices', requireAdminAuth, async (req, res) => {
 
     let createdOrUpdated = { room_id, date, price: priceNum };
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('room_prices')
         .upsert({ room_id, date, price: priceNum }, { onConflict: 'room_id,date' })
@@ -743,7 +743,7 @@ router.delete('/rooms/:id/prices/:date', requireAdminAuth, async (req, res) => {
   try {
     const { id: room_id, date } = req.params;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { error } = await supabase
         .from('room_prices')
         .delete()
@@ -785,7 +785,7 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
 
     let basePrice = 45000;
     let roomName = 'Habitación';
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data: room, error: roomErr } = await supabase
         .from('rooms')
         .select('*')
@@ -814,7 +814,7 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
     }
 
     let specialPrices = [];
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('room_prices')
         .select('date, price')
@@ -840,7 +840,7 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
     const maxDate = dateStrings[dateStrings.length - 1];
 
     let reservations = [];
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('reservations')
         .select('*')

@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../config/supabase.js';
+import { supabase, hasSupabaseConfigured } from '../config/supabase.js';
 import { requireAdminAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 
     let created = { ...newInquiry, id: 'inq-manual-' + Date.now(), created_at: new Date().toISOString() };
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('inquiries')
         .insert([newInquiry])
@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/admin', requireAdminAuth, async (req, res) => {
   try {
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('inquiries')
         .select('*')
@@ -132,7 +132,7 @@ router.patch('/admin/:id/status', requireAdminAuth, async (req, res) => {
 
     let updated = null;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('inquiries')
         .update({ status })

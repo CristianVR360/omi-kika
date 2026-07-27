@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../config/supabase.js';
+import { supabase, hasSupabaseConfigured } from '../config/supabase.js';
 import { sendGuestReservationEmail, sendAdminNotificationEmail } from '../services/emailService.js';
 
 const router = express.Router();
@@ -53,7 +53,7 @@ router.post('/', async (req, res) => {
     let pricePerNight = 45000;
 
     // 2. Buscar habitación en Supabase si se configuró BBDD
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       let query = supabase.from('rooms').select('*');
       if (room_id) {
         query = query.eq('id', room_id);
@@ -99,7 +99,7 @@ router.post('/', async (req, res) => {
     const nights = daysList.length > 0 ? daysList.length : 1;
     let totalPrice = 0;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && targetRoomId) {
+    if (hasSupabaseConfigured && targetRoomId) {
       try {
         const { data: customPrices, error: cpErr } = await supabase
           .from('room_prices')
@@ -147,7 +147,7 @@ router.post('/', async (req, res) => {
     let createdReservation = { ...newReservationData, id: 'res-' + Date.now() };
 
     // 4. Insertar en Supabase si está activo
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data: inserted, error: insertError } = await supabase
         .from('reservations')
         .insert([newReservationData])

@@ -9,6 +9,7 @@ import reservationsRouter from '../server/routes/reservations.js';
 import adminRouter from '../server/routes/admin.js';
 import inquiriesRouter from '../server/routes/inquiries.js';
 
+// Omikika B&B API Server Entrypoint v3
 dotenv.config();
 
 const app = express();

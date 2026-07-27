@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../config/supabase.js';
+import { supabase, hasSupabaseConfigured } from '../config/supabase.js';
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ const DEFAULT_ROOMS = [
 
 router.get('/', async (req, res) => {
   try {
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
