@@ -534,6 +534,31 @@ html {
     border-color: #C17F59 !important;
 }
 
+/* ----- Google Review Button & Banner ----- */
+.btn_google_review {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    color: #3c4043;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 12px 30px;
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #dadce0;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn_google_review:hover {
+    background-color: #f8f9fa;
+    color: var(--omikika-terracotta);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+    transform: translateY(-2px);
+}
+
+
 
 
 
