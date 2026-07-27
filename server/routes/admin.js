@@ -310,6 +310,87 @@ router.post('/reservations', requireAdminAuth, async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/admin/reservations/:id
+ * Editar una reserva o bloqueo existente (Protegida)
+ */
+router.put('/reservations/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      channel,
+      room_id,
+      guest_name,
+      guest_email,
+      guest_phone,
+      check_in,
+      check_out,
+      adults,
+      children,
+      status,
+      total_price,
+      notes
+    } = req.body;
+
+    if (!guest_name || !check_in || !check_out) {
+      return res.status(400).json({ error: 'Proporcione al menos Nombre, Check-in y Check-out.' });
+    }
+
+    const isValidUUID = (str) => {
+      if (!str || typeof str !== 'string') return false;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str.trim());
+    };
+
+    const cleanRoomId = isValidUUID(room_id) ? room_id.trim() : null;
+
+    const updates = {
+      guest_name,
+      check_in,
+      check_out,
+      updated_at: new Date().toISOString()
+    };
+
+    if (channel !== undefined) updates.channel = channel;
+    if (cleanRoomId !== null) updates.room_id = cleanRoomId;
+    if (guest_email !== undefined) updates.guest_email = guest_email;
+    if (guest_phone !== undefined) updates.guest_phone = guest_phone;
+    if (adults !== undefined) updates.adults = parseInt(adults, 10);
+    if (children !== undefined) updates.children = parseInt(children, 10);
+    if (status !== undefined) updates.status = status;
+    if (total_price !== undefined) updates.total_price = parseFloat(total_price) || 0;
+    if (notes !== undefined) updates.notes = notes;
+
+    let updatedReservation = { id, ...updates };
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      const { data, error } = await supabase
+        .from('reservations')
+        .update(updates)
+        .eq('id', id)
+        .select('*, rooms(name)');
+
+      if (error) {
+        console.error('Error actualizando reserva en Supabase:', error);
+        return res.status(500).json({ error: `Error en base de datos: ${error.message}` });
+      }
+
+      if (data && data.length > 0) {
+        updatedReservation = data[0];
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'Reserva/bloqueo actualizado exitosamente.',
+      reservation: updatedReservation
+    });
+
+  } catch (err) {
+    console.error('Error editando reserva:', err);
+    return res.status(500).json({ error: `Error del servidor: ${err.message}` });
+  }
+});
+
 
 
 /**

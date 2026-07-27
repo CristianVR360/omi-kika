@@ -678,6 +678,112 @@
         </div>
       </form>
     </div>
+  <!-- MODAL DE EDICIÓN DE RESERVA / BLOQUEO -->
+  <div id="edit-reservation-modal" class="admin-modal-backdrop" style="display: none;">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="edit-modal-title">✏️ Editar Reserva / Bloqueo</h3>
+        <button id="btn-close-edit-modal" class="admin-modal-close">&times;</button>
+      </div>
+
+      <div id="edit-modal-error" class="alert-error"></div>
+
+      <form id="edit-reservation-form">
+        <input type="hidden" id="edit-reservation-id">
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-channel">Plataforma u Origen *</label>
+            <select id="edit-channel" class="form-control-admin" required>
+              <option value="Booking.com">Booking.com</option>
+              <option value="Airbnb">Airbnb</option>
+              <option value="Tripadvisor">Tripadvisor</option>
+              <option value="Trivago">Trivago</option>
+              <option value="Agoda">Agoda</option>
+              <option value="Hostales.com">Hostales.com</option>
+              <option value="Kayak">Kayak</option>
+              <option value="Hostelworld">Hostelworld</option>
+              <option value="Reserva Directa">Reserva Directa</option>
+              <option value="Sitio Web">Sitio Web</option>
+              <option value="Bloqueo Administrador">Bloqueo Administrador</option>
+            </select>
+          </div>
+          <div class="form-col">
+            <label class="form-label" for="edit-status">Estado *</label>
+            <select id="edit-status" class="form-control-admin" required>
+              <option value="confirmed">Confirmada</option>
+              <option value="pending">Pendiente</option>
+              <option value="completed">Completada</option>
+              <option value="cancelled">Cancelada</option>
+              <option value="blocked">Bloqueada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-room">Habitación *</label>
+            <select id="edit-room" class="form-control-admin" required>
+              <option value="">Cargando habitaciones...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-checkin">Fecha Check-in *</label>
+            <input type="date" id="edit-checkin" class="form-control-admin" required>
+          </div>
+          <div class="form-col">
+            <label class="form-label" for="edit-checkout">Fecha Check-out *</label>
+            <input type="date" id="edit-checkout" class="form-control-admin" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-guest-name">Nombre del Huésped / Título Bloqueo *</label>
+            <input type="text" id="edit-guest-name" class="form-control-admin" placeholder="Ej: Juan Pérez" required>
+          </div>
+          <div class="form-col">
+            <label class="form-label" for="edit-guest-email">Correo Electrónico</label>
+            <input type="email" id="edit-guest-email" class="form-control-admin" placeholder="juan@ejemplo.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-guest-phone">Teléfono / Celular</label>
+            <input type="text" id="edit-guest-phone" class="form-control-admin" placeholder="+56 9 1234 5678">
+          </div>
+          <div class="form-col" style="flex: 0.5;">
+            <label class="form-label" for="edit-adults">Adultos</label>
+            <input type="number" id="edit-adults" class="form-control-admin" value="1" min="0" required>
+          </div>
+          <div class="form-col" style="flex: 0.5;">
+            <label class="form-label" for="edit-children">Niños</label>
+            <input type="number" id="edit-children" class="form-control-admin" value="0" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="edit-price">Precio Total (CLP) *</label>
+            <input type="number" id="edit-price" class="form-control-admin" placeholder="90000" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-notes">Notas / Motivo del Bloqueo</label>
+          <textarea id="edit-notes" class="form-control-admin" rows="3" placeholder="Notas adicionales o motivo del bloqueo..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" id="btn-cancel-edit-modal" class="btn-action" style="padding: 0.75rem 1.25rem;">Cancelar</button>
+          <button type="submit" id="btn-save-edit" class="btn-add-manual" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="js/dashboard.js"></script>

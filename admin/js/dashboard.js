@@ -12,7 +12,7 @@ let currentSearch = '';
 let currentGuestSearch = '';
 let loadedRooms = [];
 let guestsData = [];
-let inquiriesData = [];
+let currentReservationsList = [];
 
 function initDashboard() {
   setupUserInfo();
@@ -24,6 +24,7 @@ function initDashboard() {
   setupEventListeners();
   setupManualReservationModal();
   setupBlockDatesModal();
+  setupEditReservationModal();
   setupExportTools();
   setupSettingsTab();
 }
@@ -130,6 +131,7 @@ async function loadRooms() {
       
       const manualSelect = document.getElementById('manual-room');
       const blockSelect = document.getElementById('block-room');
+      const editSelect = document.getElementById('edit-room');
 
       const roomOptionsHtml = loadedRooms.map(r => `
         <option value="${r.id}">${r.name} (${r.size_m2 || 0}m² - Max ${r.capacity_adults} Adultos)</option>
@@ -137,6 +139,7 @@ async function loadRooms() {
 
       if (manualSelect) manualSelect.innerHTML = roomOptionsHtml;
       if (blockSelect) blockSelect.innerHTML = roomOptionsHtml;
+      if (editSelect) editSelect.innerHTML = roomOptionsHtml;
     }
   } catch (err) {
     console.error('Error cargando lista de habitaciones:', err);
@@ -228,6 +231,8 @@ function renderTable(data) {
   const tbody = document.getElementById('reservations-tbody');
   if (!tbody) return;
 
+  currentReservationsList = data || [];
+
   if (!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 2rem; color: #94a3b8;">No se encontraron reservas con los filtros aplicados.</td></tr>`;
     return;
@@ -254,6 +259,7 @@ function renderTable(data) {
         <td>${statusBadge}</td>
         <td>
           <div style="display: flex; flex-direction: column; gap: 5px; align-items: stretch;">
+            <button class="btn-action btn-edit" data-id="${res.id}" data-action="edit">✏️ Editar</button>
             ${res.status === 'pending' ? `
               <button class="btn-action btn-confirm" data-id="${res.id}" data-action="confirmed">Confirmar</button>
               <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
@@ -261,9 +267,7 @@ function renderTable(data) {
               <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Cancelar</button>
             ` : res.status === 'blocked' ? `
               <button class="btn-action btn-cancel" data-id="${res.id}" data-action="cancelled">Desbloquear</button>
-            ` : `
-              <span style="font-size: 0.8rem; color: #94a3b8; text-align: center;">—</span>
-            `}
+            ` : ''}
             <button class="btn-action btn-delete" data-id="${res.id}" data-action="delete" style="background-color: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
               Eliminar
             </button>
@@ -280,6 +284,9 @@ function renderTable(data) {
       const action = e.target.getAttribute('data-action');
       if (action === 'delete') {
         deleteReservation(id);
+      } else if (action === 'edit') {
+        const item = currentReservationsList.find(r => r.id === id);
+        if (item) openEditModal(item);
       } else {
         updateStatus(id, action);
       }
@@ -881,6 +888,127 @@ function setupBlockDatesModal() {
       }
     });
   }
+}
+
+function setupEditReservationModal() {
+  const modal = document.getElementById('edit-reservation-modal');
+  const btnClose = document.getElementById('btn-close-edit-modal');
+  const btnCancel = document.getElementById('btn-cancel-edit-modal');
+  const form = document.getElementById('edit-reservation-form');
+  const errorAlert = document.getElementById('edit-modal-error');
+
+  if (!modal) return;
+
+  const closeModal = () => {
+    modal.style.display = 'none';
+  };
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (errorAlert) errorAlert.style.display = 'none';
+
+      const id = document.getElementById('edit-reservation-id')?.value;
+      if (!id) return;
+
+      const payload = {
+        channel: document.getElementById('edit-channel')?.value,
+        status: document.getElementById('edit-status')?.value,
+        room_id: document.getElementById('edit-room')?.value,
+        check_in: document.getElementById('edit-checkin')?.value,
+        check_out: document.getElementById('edit-checkout')?.value,
+        guest_name: (document.getElementById('edit-guest-name')?.value || '').trim(),
+        guest_email: (document.getElementById('edit-guest-email')?.value || '').trim(),
+        guest_phone: (document.getElementById('edit-guest-phone')?.value || '').trim(),
+        adults: document.getElementById('edit-adults')?.value || 1,
+        children: document.getElementById('edit-children')?.value || 0,
+        total_price: document.getElementById('edit-price')?.value || 0,
+        notes: (document.getElementById('edit-notes')?.value || '').trim()
+      };
+
+      try {
+        const res = await authFetch(`/api/admin/reservations/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'No se pudo actualizar la reserva/bloqueo.');
+        }
+
+        closeModal();
+        loadStats();
+        loadReservations();
+
+      } catch (err) {
+        if (errorAlert) {
+          errorAlert.textContent = err.message;
+          errorAlert.style.display = 'block';
+        }
+      }
+    });
+  }
+}
+
+function openEditModal(reservation) {
+  const modal = document.getElementById('edit-reservation-modal');
+  const errorAlert = document.getElementById('edit-modal-error');
+  const titleEl = document.getElementById('edit-modal-title');
+  if (!modal || !reservation) return;
+
+  if (errorAlert) errorAlert.style.display = 'none';
+
+  const isBlock = reservation.status === 'blocked' || (reservation.channel && reservation.channel.includes('Bloqueo')) || (reservation.guest_name && reservation.guest_name.startsWith('[BLOQUEO]'));
+  if (titleEl) {
+    titleEl.textContent = isBlock ? '✏️ Editar Bloqueo de Fechas' : '✏️ Editar Reserva';
+  }
+
+  const idInp = document.getElementById('edit-reservation-id');
+  if (idInp) idInp.value = reservation.id || '';
+
+  const channelInp = document.getElementById('edit-channel');
+  if (channelInp) channelInp.value = reservation.channel || 'Reserva Directa';
+
+  const statusInp = document.getElementById('edit-status');
+  if (statusInp) statusInp.value = reservation.status || 'confirmed';
+
+  const roomSelect = document.getElementById('edit-room');
+  if (roomSelect && reservation.room_id) {
+    roomSelect.value = reservation.room_id;
+  }
+
+  const checkinInp = document.getElementById('edit-checkin');
+  if (checkinInp) checkinInp.value = reservation.check_in ? reservation.check_in.split('T')[0] : '';
+
+  const checkoutInp = document.getElementById('edit-checkout');
+  if (checkoutInp) checkoutInp.value = reservation.check_out ? reservation.check_out.split('T')[0] : '';
+
+  const nameInp = document.getElementById('edit-guest-name');
+  if (nameInp) nameInp.value = reservation.guest_name || '';
+
+  const emailInp = document.getElementById('edit-guest-email');
+  if (emailInp) emailInp.value = reservation.guest_email || '';
+
+  const phoneInp = document.getElementById('edit-guest-phone');
+  if (phoneInp) phoneInp.value = reservation.guest_phone || '';
+
+  const adultsInp = document.getElementById('edit-adults');
+  if (adultsInp) adultsInp.value = reservation.adults !== undefined ? reservation.adults : 1;
+
+  const childrenInp = document.getElementById('edit-children');
+  if (childrenInp) childrenInp.value = reservation.children !== undefined ? reservation.children : 0;
+
+  const priceInp = document.getElementById('edit-price');
+  if (priceInp) priceInp.value = reservation.total_price !== undefined ? Math.round(reservation.total_price) : 0;
+
+  const notesInp = document.getElementById('edit-notes');
+  if (notesInp) notesInp.value = reservation.notes || '';
+
+  modal.style.display = 'flex';
 }
 
 function setupSettingsTab() {
