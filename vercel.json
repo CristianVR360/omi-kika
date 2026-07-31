@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "builds": [
     {
       "src": "api/index.js",
@@ -14,6 +15,22 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
+    },
+    {
+      "src": "/admin$",
+      "dest": "/admin/index.html"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/admin/$1"
+    },
+    {
+      "src": "/linktree$",
+      "dest": "/linktree/index.html"
+    },
+    {
+      "src": "/recomendaciones$",
+      "dest": "/recomendaciones/index.html"
     },
     {
       "src": "/(.*)",

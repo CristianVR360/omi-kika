@@ -41,7 +41,7 @@ export const clearAuthSession = () => {
 export const checkAuthOrRedirect = () => {
   const token = getAuthToken();
   if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = '/admin/login.html';
   }
 };
 
@@ -61,7 +61,7 @@ export const authFetch = async (url, options = {}) => {
 
   if (response.status === 401) {
     clearAuthSession();
-    window.location.href = 'login.html';
+    window.location.href = '/admin/login.html';
     throw new Error('Sesión expirada. Inicie sesión nuevamente.');
   }
 

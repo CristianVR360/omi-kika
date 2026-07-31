@@ -50,7 +50,7 @@ function setupUserInfo() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       clearAuthSession();
-      window.location.href = 'login.html';
+      window.location.href = '/admin/login.html';
     });
   }
 }

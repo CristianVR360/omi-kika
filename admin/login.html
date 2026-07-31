@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Administrador — Omikika B&B</title>
-  <link rel="shortcut icon" href="../assets/img/fav.png" type="image/png">
+  <link rel="shortcut icon" href="/assets/img/fav.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
 <body class="login-body">
 
   <div class="login-card">
     <div class="login-logo">
-      <img src="../assets/img/logo.png" alt="Omikika B&B">
+      <img src="/assets/img/logo.png" alt="Omikika B&B">
       <h2 style="font-size: 1.25rem; margin-top: 1rem; color: #fff;">Panel de Administración</h2>
     </div>
 
@@ -36,11 +36,11 @@
   </div>
 
   <script type="module">
-    import { setAuthSession, getAuthToken, getApiUrl } from './js/auth.js';
+    import { setAuthSession, getAuthToken, getApiUrl } from '/admin/js/auth.js';
 
     // Redirigir si ya tiene sesión activa
     if (getAuthToken()) {
-      window.location.href = 'index.html';
+      window.location.href = '/admin/index.html';
     }
 
     const form = document.getElementById('login-form');
@@ -70,7 +70,7 @@
         }
 
         setAuthSession(data.token, data.user);
-        window.location.href = 'index.html';
+        window.location.href = '/admin/index.html';
 
       } catch (err) {
         if (err.name === 'TypeError' || err.message.includes('fetch') || err.message.includes('NetworkError')) {
