@@ -1,5 +1,7 @@
 import { authFetch, checkAuthOrRedirect, clearAuthSession, getAuthUser } from './auth.js';
 
+
+
 // Proteger la página inmediatamente
 checkAuthOrRedirect();
 
@@ -27,6 +29,7 @@ function initDashboard() {
   setupEditReservationModal();
   setupExportTools();
   setupSettingsTab();
+  setupRecommendationsTab();
 }
 
 // Ejecutar init inmediatamente si el DOM ya está listo (soporte para ES Modules)
@@ -55,10 +58,27 @@ function setupUserInfo() {
 function setupSidebarToggle() {
   const toggleBtn = document.getElementById('btn-toggle-sidebar');
   const sidebar = document.getElementById('admin-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const fabAdd = document.getElementById('mobile-fab-add');
 
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener('click', () => {
       sidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('active', sidebar.classList.contains('open'));
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      if (sidebar) sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+  }
+
+  if (fabAdd) {
+    fabAdd.addEventListener('click', () => {
+      const btnOpenManual = document.getElementById('btn-open-manual-modal');
+      if (btnOpenManual) btnOpenManual.click();
     });
   }
 }
@@ -67,7 +87,7 @@ function setupSidebarToggle() {
  * Manejador de Navegación por Pestañas (SPA)
  */
 function setupTabNavigation() {
-  const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+  const navItems = document.querySelectorAll('.sidebar-nav .nav-item, .mobile-bottom-nav .mobile-nav-item');
   const views = document.querySelectorAll('.admin-view-section');
   const titleDisplay = document.getElementById('page-title-display');
   const breadcrumbDisplay = document.getElementById('page-breadcrumb-display');
@@ -78,9 +98,14 @@ function setupTabNavigation() {
       const targetId = item.getAttribute('data-target');
       if (!targetId) return;
 
-      // Actualizar links activos en barra lateral
-      navItems.forEach(nav => nav.classList.remove('active'));
-      item.classList.add('active');
+      // Actualizar links activos en barra lateral y barra móvil
+      navItems.forEach(nav => {
+        if (nav.getAttribute('data-target') === targetId) {
+          nav.classList.add('active');
+        } else {
+          nav.classList.remove('active');
+        }
+      });
 
       // Alternar visibilidad de las vistas
       views.forEach(view => {
@@ -91,9 +116,14 @@ function setupTabNavigation() {
         }
       });
 
-      // Cerrar barra lateral en móvil al navegar
+      // Cerrar barra lateral y overlay en móvil al navegar
       const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
       if (sidebar) sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
+
+      // Scroll al inicio de la página en móvil
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // Actualizar cabecera topbar según la pestaña
       if (targetId === 'view-dashboard') {
@@ -113,6 +143,10 @@ function setupTabNavigation() {
         if (titleDisplay) titleDisplay.textContent = 'Informes & Rendimiento';
         if (breadcrumbDisplay) breadcrumbDisplay.textContent = 'Panel de Administración / Informes';
         loadStats(); // Recargar distribución de canales y métricas
+      } else if (targetId === 'view-recommendations') {
+        if (titleDisplay) titleDisplay.textContent = 'Gestión de Recomendaciones';
+        if (breadcrumbDisplay) breadcrumbDisplay.textContent = 'Panel de Administración / Recomendaciones';
+        loadAdminRecommendations();
       } else if (targetId === 'view-settings') {
         if (titleDisplay) titleDisplay.textContent = 'Configuración del Alojamiento';
         if (breadcrumbDisplay) breadcrumbDisplay.textContent = 'Panel de Administración / Configuración';
@@ -162,6 +196,19 @@ async function loadStats() {
       if (elPending) elPending.textContent = data.stats.pending || 0;
       if (elConfirmed) elConfirmed.textContent = data.stats.confirmed || 0;
       if (elRevenue) elRevenue.textContent = `$${Number(data.stats.revenue || 0).toLocaleString('es-CL')} CLP`;
+
+      // KPIs nuevos
+      const elKpiRevenue = document.getElementById('kpi-revenue');
+      if (elKpiRevenue) elKpiRevenue.textContent = `$${Number(data.stats.revenue || 0).toLocaleString('es-CL')} CLP`;
+
+      const elReservations = document.getElementById('kpi-reservations');
+      if (elReservations) elReservations.textContent = Number(totalCount).toLocaleString('es-CL');
+
+      const elRooms = document.getElementById('kpi-rooms');
+      if (elRooms) elRooms.textContent = Number(data.stats.rooms || 0).toLocaleString('es-CL');
+
+      const elInquiries = document.getElementById('kpi-inquiries');
+      if (elInquiries) elInquiries.textContent = Number(data.stats.inquiries || 0).toLocaleString('es-CL');
 
       // Cargar distribución real de canales basada en todas las reservas
       updateChannelDistribution(data.stats.channels, totalCount);
@@ -1297,3 +1344,346 @@ function escapeHtml(str) {
     "'": '&#039;'
   })[m]);
 }
+
+/* =========================================================
+   GESTIÓN DE RECOMENDACIONES (/recomendaciones)
+   ========================================================= */
+
+let adminRecommendationsList = [];
+let currentAdminRecCategory = 'all';
+let currentAdminRecSearch = '';
+
+function setupRecommendationsTab() {
+  const btnOpenModal = document.getElementById('btn-open-rec-modal');
+  const btnCloseModal = document.getElementById('btn-close-rec-modal');
+  const btnCancelModal = document.getElementById('btn-cancel-rec-modal');
+  const modal = document.getElementById('modal-recommendation');
+  const form = document.getElementById('rec-modal-form');
+  const searchInput = document.getElementById('admin-rec-search');
+  const filterBtns = document.querySelectorAll('#admin-rec-category-filters .btn-filter-tag');
+
+  if (btnOpenModal) {
+    btnOpenModal.addEventListener('click', () => openRecommendationModal(null));
+  }
+
+  if (btnCloseModal) btnCloseModal.addEventListener('click', closeRecommendationModal);
+  if (btnCancelModal) btnCancelModal.addEventListener('click', closeRecommendationModal);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeRecommendationModal();
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', saveRecommendationForm);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentAdminRecSearch = e.target.value.trim().toLowerCase();
+      renderAdminRecommendationsTable();
+    });
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-muted)';
+        b.style.borderColor = 'rgba(255,255,255,0.1)';
+      });
+      btn.classList.add('active');
+      btn.style.background = '#334155';
+      btn.style.color = '#fff';
+      btn.style.borderColor = 'rgba(255,255,255,0.2)';
+
+      currentAdminRecCategory = btn.getAttribute('data-filter') || 'all';
+      renderAdminRecommendationsTable();
+    });
+  });
+}
+
+async function loadAdminRecommendations() {
+  const tbody = document.getElementById('table-recommendations-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        ⌛ Cargando recomendaciones desde el servidor...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await authFetch('/api/recommendations/admin');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.recommendations)) {
+        adminRecommendationsList = data.recommendations;
+      } else {
+        adminRecommendationsList = [];
+      }
+    } else {
+      console.warn('Endpoint admin/recommendations no retornó ok, intentando GET público...');
+      const publicRes = await authFetch('/api/recommendations');
+      const publicData = await publicRes.json();
+      adminRecommendationsList = publicData.recommendations || [];
+    }
+  } catch (err) {
+    console.error('Error al cargar recomendaciones admin:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2rem; color: #f87171;">
+          ⚠️ Error al cargar las recomendaciones: ${escapeHtml(err.message)}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  renderAdminRecommendationsTable();
+}
+
+function renderAdminRecommendationsTable() {
+  const tbody = document.getElementById('table-recommendations-body');
+  if (!tbody) return;
+
+  let filtered = adminRecommendationsList.filter(rec => {
+    if (currentAdminRecCategory !== 'all' && rec.category !== currentAdminRecCategory) {
+      return false;
+    }
+
+    if (currentAdminRecSearch) {
+      const name = (rec.name || '').toLowerCase();
+      const desc = (rec.description || '').toLowerCase();
+      const phone = (rec.phone || '').toLowerCase();
+      const addr = (rec.address || '').toLowerCase();
+      return name.includes(currentAdminRecSearch) || desc.includes(currentAdminRecSearch) || phone.includes(currentAdminRecSearch) || addr.includes(currentAdminRecSearch);
+    }
+
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          No hay recomendaciones registradas que coincidan con el filtro.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(rec => {
+    const categoryBadges = {
+      termas: '<span style="background: rgba(2,132,199,0.2); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">♨️ Termas</span>',
+      restaurantes: '<span style="background: rgba(225,29,72,0.2); color: #fb7185; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">🍽️ Restaurantes</span>',
+      delivery: '<span style="background: rgba(147,51,234,0.2); color: #c084fc; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">🛵 Deliverys</span>',
+      entretencion: '<span style="background: rgba(22,163,74,0.2); color: #4ade80; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">🏔️ Entretención</span>',
+      cafeterias: '<span style="background: rgba(180,83,9,0.2); color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">☕ Cafeterías</span>',
+      comidas: '<span style="background: rgba(217,119,6,0.2); color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">🍕 Comidas</span>'
+    };
+
+    const catBadge = categoryBadges[rec.category] || `<span style="background: #334155; color: #94a3b8; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem;">${escapeHtml(rec.category)}</span>`;
+
+    const statusBadge = rec.is_active !== false
+      ? `<span style="background: rgba(34,197,94,0.2); color: #4ade80; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">● Activa</span>`
+      : `<span style="background: rgba(239,68,68,0.2); color: #f87171; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">○ Inactiva</span>`;
+
+    const linksHtml = [];
+    if (rec.maps_url) linksHtml.push(`<a href="${escapeHtml(rec.maps_url)}" target="_blank" title="Ver en Maps" style="color: #ef4444; margin-right: 6px;">📍 Maps</a>`);
+    if (rec.instagram_url) linksHtml.push(`<a href="${escapeHtml(rec.instagram_url)}" target="_blank" title="Instagram" style="color: #ec4899; margin-right: 6px;">📸 IG</a>`);
+    if (rec.website_url) linksHtml.push(`<a href="${escapeHtml(rec.website_url)}" target="_blank" title="Sitio Web" style="color: #3b82f6;">🌐 Web</a>`);
+
+    return `
+      <tr>
+        <td style="font-weight: 700; color: var(--gold, #c89d5b); text-align: center;">${rec.display_order || 0}</td>
+        <td>
+          <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">${escapeHtml(rec.name)}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">${escapeHtml(rec.description || '')}</div>
+        </td>
+        <td>${catBadge}</td>
+        <td style="font-size: 0.85rem; color: #cbd5e1;">${escapeHtml(rec.phone || '-')}</td>
+        <td style="font-size: 0.85rem; color: #cbd5e1; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(rec.address || '-')}</td>
+        <td style="font-size: 0.82rem;">${linksHtml.join('') || '<span style="color: #64748b;">-</span>'}</td>
+        <td>${statusBadge}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <div style="display: inline-flex; gap: 4px; justify-content: flex-end;">
+            <button class="btn-rec-action btn-edit-rec" data-id="${rec.id}" title="Editar Recomendación">✏️</button>
+            <button class="btn-rec-action btn-toggle-status-rec" data-id="${rec.id}" data-active="${rec.is_active !== false}" title="${rec.is_active !== false ? 'Desactivar / Ocultar' : 'Activar / Mostrar'}">
+              ${rec.is_active !== false ? '👁️' : '🙈'}
+            </button>
+            <button class="btn-rec-action btn-delete btn-delete-rec" data-id="${rec.id}" title="Eliminar Recomendación">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Event Listeners en la tabla
+  tbody.querySelectorAll('.btn-edit-rec').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const item = adminRecommendationsList.find(r => r.id === id);
+      if (item) openRecommendationModal(item);
+    });
+  });
+
+  tbody.querySelectorAll('.btn-toggle-status-rec').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const isCurrentlyActive = btn.getAttribute('data-active') === 'true';
+      await toggleRecommendationStatusItem(id, !isCurrentlyActive);
+    });
+  });
+
+  tbody.querySelectorAll('.btn-delete-rec').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (confirm('¿Está seguro de eliminar esta recomendación?')) {
+        await deleteRecommendationItem(id);
+      }
+    });
+  });
+}
+
+function openRecommendationModal(rec = null) {
+  const modal = document.getElementById('modal-recommendation');
+  const title = document.getElementById('rec-modal-title');
+  const errAlert = document.getElementById('rec-modal-error-alert');
+
+  if (!modal) return;
+  if (errAlert) errAlert.style.display = 'none';
+
+  document.getElementById('rec-id-hidden').value = rec ? rec.id : '';
+  document.getElementById('rec-form-name').value = rec ? rec.name : '';
+  document.getElementById('rec-form-category').value = rec ? rec.category : 'restaurantes';
+  document.getElementById('rec-form-phone').value = rec ? rec.phone || '' : '';
+  document.getElementById('rec-form-address').value = rec ? rec.address || '' : '';
+  document.getElementById('rec-form-maps').value = rec ? rec.maps_url || '' : '';
+  document.getElementById('rec-form-instagram').value = rec ? rec.instagram_url || '' : '';
+  document.getElementById('rec-form-website').value = rec ? rec.website_url || '' : '';
+  document.getElementById('rec-form-order').value = rec ? (rec.display_order !== undefined ? rec.display_order : 1) : (adminRecommendationsList.length + 1);
+  document.getElementById('rec-form-description').value = rec ? rec.description || '' : '';
+  document.getElementById('rec-form-active').checked = rec ? rec.is_active !== false : true;
+
+  if (title) {
+    title.textContent = rec ? '✏️ Editar Recomendación' : '⭐ Crear Nueva Recomendación';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeRecommendationModal() {
+  const modal = document.getElementById('modal-recommendation');
+  if (modal) modal.style.display = 'none';
+}
+
+async function saveRecommendationForm(e) {
+  e.preventDefault();
+  const errAlert = document.getElementById('rec-modal-error-alert');
+  const btnSave = document.getElementById('btn-save-rec');
+
+  const id = document.getElementById('rec-id-hidden').value;
+  const name = document.getElementById('rec-form-name').value.trim();
+  const category = document.getElementById('rec-form-category').value;
+  const phone = document.getElementById('rec-form-phone').value.trim();
+  const address = document.getElementById('rec-form-address').value.trim();
+  const maps_url = document.getElementById('rec-form-maps').value.trim();
+  const instagram_url = document.getElementById('rec-form-instagram').value.trim();
+  const website_url = document.getElementById('rec-form-website').value.trim();
+  const display_order = parseInt(document.getElementById('rec-form-order').value || '0', 10);
+  const description = document.getElementById('rec-form-description').value.trim();
+  const is_active = document.getElementById('rec-form-active').checked;
+
+  if (!name || !category) {
+    if (errAlert) {
+      errAlert.textContent = 'Por favor complete el nombre y la categoría.';
+      errAlert.style.display = 'block';
+    }
+    return;
+  }
+
+  const payload = {
+    name,
+    category,
+    phone,
+    address,
+    maps_url,
+    instagram_url,
+    website_url,
+    display_order,
+    description,
+    is_active
+  };
+
+  try {
+    if (btnSave) btnSave.disabled = true;
+
+    const url = id ? `/api/recommendations/admin/${id}` : '/api/recommendations/admin';
+    const method = id ? 'PUT' : 'POST';
+
+    const res = await authFetch(url, {
+      method,
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Error al guardar la recomendación.');
+    }
+
+    closeRecommendationModal();
+    await loadAdminRecommendations();
+  } catch (err) {
+    console.error('Error al guardar recomendación:', err);
+    if (errAlert) {
+      errAlert.textContent = err.message || 'Error al guardar recomendación.';
+      errAlert.style.display = 'block';
+    }
+  } finally {
+    if (btnSave) btnSave.disabled = false;
+  }
+}
+
+async function toggleRecommendationStatusItem(id, newStatus) {
+  try {
+    const res = await authFetch(`/api/recommendations/admin/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: newStatus })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      await loadAdminRecommendations();
+    } else {
+      alert(data.error || 'Error al cambiar estado.');
+    }
+  } catch (err) {
+    console.error('Error toggle status:', err);
+    alert('Error al actualizar el estado de la recomendación.');
+  }
+}
+
+async function deleteRecommendationItem(id) {
+  try {
+    const res = await authFetch(`/api/recommendations/admin/${id}`, {
+      method: 'DELETE'
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      await loadAdminRecommendations();
+    } else {
+      alert(data.error || 'Error al eliminar recomendación.');
+    }
+  } catch (err) {
+    console.error('Error delete recommendation:', err);
+    alert('Error al eliminar recomendación.');
+  }
+}
+

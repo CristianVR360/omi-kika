@@ -13,6 +13,7 @@
 <body>
 
   <div class="app-wrapper">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- SIDEBAR LATERAL -->
     <aside class="admin-sidebar" id="admin-sidebar">
@@ -39,6 +40,10 @@
         <a href="#" class="nav-item" data-target="view-reports">
           <span class="nav-icon">📈</span>
           <span>Informes</span>
+        </a>
+        <a href="#" class="nav-item" data-target="view-recommendations">
+          <span class="nav-icon">⭐</span>
+          <span>Recomendaciones</span>
         </a>
         <a href="#" class="nav-item" data-target="view-settings">
           <span class="nav-icon">⚙️</span>
@@ -198,24 +203,29 @@
 
           <!-- Tabla de Reservas -->
           <div class="table-card">
-            <table class="reservations-table">
-              <thead>
-                <tr>
-                  <th>Origen / Plataforma</th>
-                  <th>Huésped / Contacto</th>
-                  <th>Habitación</th>
-                  <th>Check-in</th>
-                  <th>Check-out</th>
-                  <th>Capacidad</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="reservations-tbody">
-                <!-- Dinámico -->
-              </tbody>
-            </table>
+            <div class="mobile-scroll-hint">
+              <span>👈 Desliza la tabla para ver más detalles 👉</span>
+            </div>
+            <div class="table-responsive">
+              <table class="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Origen / Plataforma</th>
+                    <th>Huésped / Contacto</th>
+                    <th>Habitación</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Capacidad</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th style="text-align: right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="reservations-tbody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
 
             <div class="pagination-wrapper">
               <div class="pagination-info" id="pagination-info">
@@ -251,21 +261,26 @@
           </div>
 
           <div class="table-card">
-            <table class="reservations-table">
-              <thead>
-                <tr>
-                  <th>Huésped</th>
-                  <th>Correo Electrónico</th>
-                  <th>Teléfono / WhatsApp</th>
-                  <th>Total Estadías</th>
-                  <th>Monto Total Invertido (CLP)</th>
-                  <th>Último Check-in</th>
-                </tr>
-              </thead>
-              <tbody id="guests-tbody">
-                <!-- Dinámico -->
-              </tbody>
-            </table>
+            <div class="mobile-scroll-hint">
+              <span>👈 Desliza la tabla para ver más detalles 👉</span>
+            </div>
+            <div class="table-responsive">
+              <table class="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Huésped</th>
+                    <th>Correo Electrónico</th>
+                    <th>Teléfono / WhatsApp</th>
+                    <th style="text-align: center;">Total Estadías</th>
+                    <th>Monto Total Invertido (CLP)</th>
+                    <th>Último Check-in</th>
+                  </tr>
+                </thead>
+                <tbody id="guests-tbody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -281,21 +296,26 @@
           </div>
 
           <div class="table-card">
-            <table class="reservations-table">
-              <thead>
-                <tr>
-                  <th>Fecha de Ingreso</th>
-                  <th>Cliente</th>
-                  <th>Asunto</th>
-                  <th>Mensaje de Consulta</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="inquiries-tbody">
-                <!-- Dinámico -->
-              </tbody>
-            </table>
+            <div class="mobile-scroll-hint">
+              <span>👈 Desliza la tabla para ver más detalles 👉</span>
+            </div>
+            <div class="table-responsive">
+              <table class="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Fecha de Ingreso</th>
+                    <th>Cliente</th>
+                    <th>Asunto</th>
+                    <th>Mensaje de Consulta</th>
+                    <th>Estado</th>
+                    <th style="text-align: right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="inquiries-tbody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -514,6 +534,71 @@
             <!-- Grid de días del Calendario -->
             <div id="settings-calendar-grid" class="calendar-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
               <!-- Se rellenará con tarjetas dinámicas de días -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- VISTA: RECOMENDACIONES DE ESPACIOS Y SERVICIOS -->
+        <div id="view-recommendations" class="admin-view-section" style="display: none;">
+          <div class="view-header-flex rec-header-container">
+            <div class="rec-header-titles">
+              <h2 class="view-title">Directorios & Recomendaciones <span class="rec-badge-url">/recomendaciones</span></h2>
+              <div class="view-subtitle">Gestiona las sugerencias de termas, restaurantes, deliverys y panoramas para los huéspedes</div>
+            </div>
+            <button id="btn-open-rec-modal" class="btn-add-manual btn-rec-add">
+              <span>➕</span>
+              <span>Nueva Recomendación</span>
+            </button>
+          </div>
+
+          <!-- Filtros de categoría y Búsqueda -->
+          <div class="table-card rec-table-card">
+            <div class="rec-toolbar">
+              <div class="rec-categories-scroll" id="admin-rec-category-filters">
+                <button class="btn-filter-tag active" data-filter="all">✨ Todas</button>
+                <button class="btn-filter-tag" data-filter="termas">♨️ Termas</button>
+                <button class="btn-filter-tag" data-filter="restaurantes">🍽️ Restaurantes</button>
+                <button class="btn-filter-tag" data-filter="delivery">🛵 Deliverys</button>
+                <button class="btn-filter-tag" data-filter="entretencion">🏔️ Entretención</button>
+                <button class="btn-filter-tag" data-filter="cafeterias">☕ Cafeterías</button>
+                <button class="btn-filter-tag" data-filter="comidas">🍕 Comidas</button>
+              </div>
+
+              <div class="rec-search-wrapper">
+                <span class="rec-search-icon">🔍</span>
+                <input type="text" id="admin-rec-search" class="form-control-admin rec-search-input" placeholder="Buscar por nombre, dirección...">
+              </div>
+            </div>
+
+            <!-- Hint visual para móvil -->
+            <div class="mobile-scroll-hint">
+              <span>👈 Desliza la tabla para ver más detalles 👉</span>
+            </div>
+
+            <!-- Tabla de Registros -->
+            <div class="table-responsive rec-table-wrapper">
+              <table class="admin-data-table rec-data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px; text-align: center;">Orden</th>
+                    <th style="min-width: 200px;">Espacio / Lugar</th>
+                    <th style="width: 130px;">Categoría</th>
+                    <th style="min-width: 130px;">Teléfono</th>
+                    <th style="min-width: 170px;">Dirección</th>
+                    <th style="min-width: 110px;">Redes / Web</th>
+                    <th style="width: 100px;">Estado</th>
+                    <th style="width: 140px; text-align: right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="table-recommendations-body">
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                      ⌛ Cargando recomendaciones...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -788,6 +873,115 @@
     </div>
   </div>
 
-  <script type="module" src="js/dashboard.js?v=3"></script>
+  <!-- MODAL DE RECOMENDACIONES (CREAR / EDITAR) -->
+  <div id="modal-recommendation" class="admin-modal-backdrop" style="display: none;">
+    <div class="admin-modal" style="max-width: 650px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="rec-modal-title">⭐ Crear Nueva Recomendación</h3>
+        <button id="btn-close-rec-modal" class="admin-modal-close">&times;</button>
+      </div>
+
+      <div id="rec-modal-error-alert" class="alert-error" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem;"></div>
+
+      <form id="rec-modal-form">
+        <input type="hidden" id="rec-id-hidden" value="">
+
+        <div class="form-row">
+          <div class="form-col" style="flex: 2;">
+            <label class="form-label" for="rec-form-name">Nombre del Espacio / Local *</label>
+            <input type="text" id="rec-form-name" class="form-control-admin" placeholder="Ej: Termas Geométricas" required>
+          </div>
+          <div class="form-col" style="flex: 1;">
+            <label class="form-label" for="rec-form-category">Categoría *</label>
+            <select id="rec-form-category" class="form-control-admin" required>
+              <option value="termas">♨️ Termas</option>
+              <option value="restaurantes" selected>🍽️ Restaurantes</option>
+              <option value="delivery">🛵 Deliverys</option>
+              <option value="entretencion">🏔️ Entretención</option>
+              <option value="cafeterias">☕ Cafeterías</option>
+              <option value="comidas">🍕 Comidas</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="rec-form-phone">Teléfono / WhatsApp</label>
+            <input type="text" id="rec-form-phone" class="form-control-admin" placeholder="Ej: +56 9 9876 5432">
+          </div>
+          <div class="form-col">
+            <label class="form-label" for="rec-form-address">Dirección / Referencia</label>
+            <input type="text" id="rec-form-address" class="form-control-admin" placeholder="Ej: Av. Bernardo O'Higgins 450">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="rec-form-maps">Enlace Google Maps</label>
+            <input type="url" id="rec-form-maps" class="form-control-admin" placeholder="https://maps.app.goo.gl/...">
+          </div>
+          <div class="form-col">
+            <label class="form-label" for="rec-form-instagram">Enlace Instagram</label>
+            <input type="url" id="rec-form-instagram" class="form-control-admin" placeholder="https://instagram.com/local">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label" for="rec-form-website">Sitio Web Oficial</label>
+            <input type="url" id="rec-form-website" class="form-control-admin" placeholder="https://www.ejemplo.cl">
+          </div>
+          <div class="form-col" style="flex: 0.5;">
+            <label class="form-label" for="rec-form-order">Orden</label>
+            <input type="number" id="rec-form-order" class="form-control-admin" value="1" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="rec-form-description">Breve Descripción / Sugerencia del Anfitrión</label>
+          <textarea id="rec-form-description" class="form-control-admin" rows="3" placeholder="Describe qué hace especial este lugar para los huéspedes de Omikika..."></textarea>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+          <input type="checkbox" id="rec-form-active" checked style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="rec-form-active" style="cursor: pointer; font-size: 0.9rem; color: #fff;">Mostrar esta recomendación públicamente en /recomendaciones</label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" id="btn-cancel-rec-modal" class="btn-action" style="padding: 0.75rem 1.25rem;">Cancelar</button>
+          <button type="submit" id="btn-save-rec" class="btn-add-manual" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--gold, #c89d5b) 0%, #b08442 100%);">Guardar Recomendación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BARRA DE NAVEGACIÓN MÓVIL (BOTTOM NAV) -->
+  <nav class="mobile-bottom-nav">
+    <a href="#" class="mobile-nav-item active" data-target="view-dashboard">
+      <span class="mobile-nav-icon">📊</span>
+      <span class="mobile-nav-label">Dashboard</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-target="view-guests">
+      <span class="mobile-nav-icon">👥</span>
+      <span class="mobile-nav-label">Huéspedes</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-target="view-inquiries">
+      <span class="mobile-nav-icon">💬</span>
+      <span class="mobile-nav-label">Consultas</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-target="view-recommendations">
+      <span class="mobile-nav-icon">⭐</span>
+      <span class="mobile-nav-label">Recs</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-target="view-settings">
+      <span class="mobile-nav-icon">⚙️</span>
+      <span class="mobile-nav-label">Ajustes</span>
+    </a>
+  </nav>
+
+  <!-- BOTÓN FLOTANTE MÓVIL (FAB) -->
+  <button class="mobile-fab" id="mobile-fab-add" title="Crear Reserva Manual">+</button>
+
+  <script type="module" src="js/dashboard.js?v=9"></script>
 </body>
 </html>

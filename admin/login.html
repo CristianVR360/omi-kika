@@ -36,7 +36,7 @@
   </div>
 
   <script type="module">
-    import { setAuthSession, getAuthToken } from './js/auth.js';
+    import { setAuthSession, getAuthToken, getApiUrl } from './js/auth.js';
 
     // Redirigir si ya tiene sesión activa
     if (getAuthToken()) {
@@ -57,7 +57,7 @@
       const password = document.getElementById('password').value;
 
       try {
-        const response = await fetch('/api/admin/login', {
+        const response = await fetch(getApiUrl('/api/admin/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -73,7 +73,11 @@
         window.location.href = 'index.html';
 
       } catch (err) {
-        errorAlert.textContent = err.message;
+        if (err.name === 'TypeError' || err.message.includes('fetch') || err.message.includes('NetworkError')) {
+          errorAlert.textContent = 'No se pudo conectar con el servidor API local (puerto 3000). Asegúrate de tener ejecutando "npm run dev" en la terminal.';
+        } else {
+          errorAlert.textContent = err.message;
+        }
         errorAlert.style.display = 'block';
       } finally {
         btnSubmit.disabled = false;

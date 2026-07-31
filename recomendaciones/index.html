@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Omikika B&B — Guía & Recomendaciones Locales</title>
+  <meta name="description" content="Descubre los mejores restaurantes, termas, deliverys y panoramas recomendados especialmente por el equipo de Omikika B&B en la Zona Lacustre.">
+  <meta property="og:title" content="Recomendaciones Omikika B&B — Los mejores lugares de la zona">
+  <meta property="og:description" content="Guía interactiva de datos imperdibles en Pucón y la Zona Lacustre: termas, comida, paseos y entretención.">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="../assets/img/fav.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/img/apple-touch-icon.png">
+
+  <!-- Google Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="recomendaciones.css">
+</head>
+
+<body>
+
+  <!-- Elementos de Puntero/Cursor Animado -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-outline" id="cursor-outline"></div>
+
+  <main class="rec-container">
+
+    <!-- Header de Marca -->
+    <header class="rec-header">
+      <a href="../linktree/">
+        <img src="../assets/img/logo.png" alt="Omikika B&B" class="rec-header-logo">
+      </a>
+      <h1 class="rec-header-title">Espacios Recomendados</h1>
+      <p class="rec-header-sub">Los mejores datos de la zona seleccionados con cariño para nuestros huéspedes</p>
+    </header>
+
+    <!-- Buscador en tiempo real -->
+    <div class="search-wrapper">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" id="search-input" class="search-input interactive-link" placeholder="Buscar por nombre, termas, pizza, café...">
+    </div>
+
+    <!-- Filtros por Categoría -->
+    <nav class="filter-tags-row" aria-label="Filtro por categoría">
+      <button class="filter-btn active interactive-link" data-cat="all">✨ Todas</button>
+      <button class="filter-btn interactive-link" data-cat="termas">♨️ Termas</button>
+      <button class="filter-btn interactive-link" data-cat="restaurantes">🍽️ Restaurantes</button>
+      <button class="filter-btn interactive-link" data-cat="delivery">🛵 Deliverys</button>
+      <button class="filter-btn interactive-link" data-cat="entretencion">🏔️ Entretención</button>
+      <button class="filter-btn interactive-link" data-cat="cafeterias">☕ Cafeterías</button>
+    </nav>
+
+    <!-- Lista Dinámica de Tarjetas de Recomendación -->
+    <section class="recommendations-list" id="recommendations-list">
+      <!-- Cargado vía JS -->
+    </section>
+
+    <!-- Footer con retorno a Linktree -->
+    <footer class="rec-footer">
+      <a href="../linktree/" class="back-linktree-btn interactive-link">
+        <i class="bi bi-arrow-left"></i> Volver al Linktree Omikika
+      </a>
+      <p style="font-size: 0.78rem; color: #8c8278; margin-top: 0.5rem;">© Omikika B&B — Tu hogar junto al lago</p>
+    </footer>
+
+  </main>
+
+  <!-- Script Cliente JS -->
+  <script src="recomendaciones.js"></script>
+</body>
+
+</html>

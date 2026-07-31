@@ -7,6 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const DateTime = easepick.DateTime;
   let dynamicBookedDates = [];
 
+  function getApiUrl(path) {
+    if (!path) return path;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const h = window.location.hostname;
+    const isLocalNetwork = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h);
+    if (isLocalNetwork && window.location.port && window.location.port !== '3000') {
+      return `${window.location.protocol}//${h}:3000${path.startsWith('/') ? path : '/' + path}`;
+    }
+    return path;
+  }
+
   // Función para obtener las fechas reservadas o bloqueadas de la habitación seleccionada
   async function fetchBookedDatesForRoom(roomName = '') {
     try {
@@ -16,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const url = `/api/reservations/booked-dates?room_name=${encodeURIComponent(roomName)}`;
-      const res = await fetch(url);
+      const res = await fetch(getApiUrl(url));
       const data = await res.json();
 
       if (data.success && Array.isArray(data.bookedDates)) {
@@ -98,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const url = `/api/reservations/calculate-price?room_name=${encodeURIComponent(roomName)}&check_in=${checkIn}&check_out=${checkOut}`;
-      const res = await fetch(url);
+      const res = await fetch(getApiUrl(url));
       const data = await res.json();
 
       if (data.success && data.totalPrice !== undefined) {

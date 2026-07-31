@@ -8,6 +8,7 @@ import roomsRouter from '../server/routes/rooms.js';
 import reservationsRouter from '../server/routes/reservations.js';
 import adminRouter from '../server/routes/admin.js';
 import inquiriesRouter from '../server/routes/inquiries.js';
+import recommendationsRouter from '../server/routes/recommendations.js';
 
 // Omikika B&B API Server Entrypoint v3
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/rooms', roomsRouter);
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/inquiries', inquiriesRouter);
+app.use('/api/recommendations', recommendationsRouter);
 
 // Ruta de estado de la API
 app.get('/api/health', (req, res) => {
@@ -55,9 +57,10 @@ app.use('/api/*', (req, res) => {
 
 // Inicialización local
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor Omikika B&B escuchando en http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`🚀 Servidor Omikika B&B escuchando en http://${HOST}:${PORT} (Accesible en tu red local WiFi)`);
   });
 }
 

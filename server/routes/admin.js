@@ -107,6 +107,93 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ error: 'Error del servidor durante el inicio de sesión.' });
   }
 });
+// Helper para sembrar reservas iniciales de muestra en Supabase si la tabla está totalmente vacía
+const ensureInitialReservationsSeeded = async () => {
+  if (!hasSupabaseConfigured) return false;
+  try {
+    const { count, error } = await supabase
+      .from('reservations')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error && count === 0) {
+      const { data: rooms } = await supabase.from('rooms').select('id, slug');
+      if (rooms && rooms.length > 0) {
+        const getRoomId = (slug) => {
+          const found = rooms.find(r => r.slug === slug);
+          return found ? found.id : rooms[0].id;
+        };
+
+        const sampleData = [
+          {
+            room_id: getRoomId('apartamento-planta-baja'),
+            channel: 'Booking.com',
+            guest_name: 'María González',
+            guest_email: 'maria.gonzalez@example.com',
+            guest_phone: '+56 9 8765 4321',
+            check_in: '2026-08-05',
+            check_out: '2026-08-10',
+            adults: 3,
+            children: 1,
+            status: 'confirmed',
+            total_price: 375000,
+            notes: 'Reserva confirmada vía Booking.com. Solicita cuna suplementaria.'
+          },
+          {
+            room_id: getRoomId('habitacion-doble'),
+            channel: 'Airbnb',
+            guest_name: 'Carlos Benítez',
+            guest_email: 'carlos.b@example.com',
+            guest_phone: '+56 9 7654 3210',
+            check_in: '2026-08-12',
+            check_out: '2026-08-15',
+            adults: 2,
+            children: 0,
+            status: 'confirmed',
+            total_price: 135000,
+            notes: 'Llegada noche previa coordinada (21:00 hrs).'
+          },
+          {
+            room_id: getRoomId('suite-executive'),
+            channel: 'Sitio Web',
+            guest_name: 'Andrea Morales',
+            guest_email: 'andrea.morales@example.com',
+            guest_phone: '+56 9 6543 2109',
+            check_in: '2026-08-18',
+            check_out: '2026-08-20',
+            adults: 2,
+            children: 0,
+            status: 'pending',
+            total_price: 130000,
+            notes: 'Pendiente de confirmación de pago por transferencia.'
+          },
+          {
+            room_id: getRoomId('habitacion-doble-economica'),
+            channel: 'Reserva Directa',
+            guest_name: 'Felipe Soto',
+            guest_email: 'fsoto@example.com',
+            guest_phone: '+56 9 5432 1098',
+            check_in: '2026-07-25',
+            check_out: '2026-07-28',
+            adults: 2,
+            children: 0,
+            status: 'completed',
+            total_price: 120000,
+            notes: 'Cliente frecuente. Check-out realizado con éxito.'
+          }
+        ];
+
+        const { error: insertErr } = await supabase.from('reservations').insert(sampleData);
+        if (!insertErr) {
+          console.log('🌱 Se han sembrado 4 reservas iniciales en la base de datos Supabase.');
+          return true;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[SEED WARNING] Error al sembrar reservas iniciales:', err.message);
+  }
+  return false;
+};
 
 /**
  * GET /api/admin/reservations
@@ -192,7 +279,22 @@ router.get('/reservations', requireAdminAuth, async (req, res) => {
 
     query = query.range(from, to);
 
-    const { data, count, error } = await query;
+    let { data, count, error } = await query;
+
+    if (!error && (count === 0 || !data || data.length === 0) && status === 'all' && channel === 'all' && !search && page === 1) {
+      const seeded = await ensureInitialReservationsSeeded();
+      if (seeded) {
+        const retry = await supabase
+          .from('reservations')
+          .select('*, rooms(name)', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+        if (!retry.error) {
+          data = retry.data;
+          count = retry.count;
+        }
+      }
+    }
 
     if (error) {
       console.error('Error al consultar reservas en Supabase:', error);
@@ -206,7 +308,6 @@ router.get('/reservations', requireAdminAuth, async (req, res) => {
       }
       return res.status(500).json({ error: 'Error al consultar reservas en la base de datos.' });
     }
-
 
     const totalRecords = count || 0;
     const totalPages = Math.ceil(totalRecords / limit) || 1;
@@ -492,7 +593,15 @@ router.delete('/reservations/:id', requireAdminAuth, async (req, res) => {
 router.get('/stats', requireAdminAuth, async (req, res) => {
   try {
     if (hasSupabaseConfigured) {
-      const { data, error } = await supabase.from('reservations').select('status, total_price, channel');
+      let { data, error } = await supabase.from('reservations').select('status, total_price, channel');
+      if (!error && (!data || data.length === 0)) {
+        const seeded = await ensureInitialReservationsSeeded();
+        if (seeded) {
+          const retry = await supabase.from('reservations').select('status, total_price, channel');
+          if (!retry.error) data = retry.data;
+        }
+      }
+
       if (!error && data) {
         const total = data.length;
         const pending = data.filter(r => r.status === 'pending').length;

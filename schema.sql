@@ -132,3 +132,14 @@ FOR UPDATE USING (true);
 DROP POLICY IF EXISTS "Permitir borrado de precios al admin" ON public.room_prices;
 CREATE POLICY "Permitir borrado de precios al admin" ON public.room_prices
 FOR DELETE USING (true);
+
+-- 8. Semillas Iniciales para Reservas de Muestra (Opcional)
+INSERT INTO public.reservations (room_id, channel, guest_name, guest_email, guest_phone, check_in, check_out, adults, children, status, total_price, notes)
+SELECT id, 'Booking.com', 'María González', 'maria.gonzalez@example.com', '+56 9 8765 4321', '2026-08-05', '2026-08-10', 3, 1, 'confirmed', 375000.00, 'Reserva confirmada vía Booking.com'
+FROM public.rooms WHERE slug = 'apartamento-planta-baja'
+LIMIT 1;
+
+INSERT INTO public.reservations (room_id, channel, guest_name, guest_email, guest_phone, check_in, check_out, adults, children, status, total_price, notes)
+SELECT id, 'Airbnb', 'Carlos Benítez', 'carlos.b@example.com', '+56 9 7654 3210', '2026-08-12', '2026-08-15', 2, 0, 'confirmed', 135000.00, 'Llegada tarde coordinada'
+FROM public.rooms WHERE slug = 'habitacion-doble'
+LIMIT 1;

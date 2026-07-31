@@ -2,6 +2,21 @@
 const TOKEN_KEY = 'omikika_admin_token';
 const USER_KEY = 'omikika_admin_user';
 
+export const getApiUrl = (path) => {
+  if (!path) return path;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  
+  const h = window.location.hostname;
+  const isLocalNetwork = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h);
+  
+  if (isLocalNetwork && window.location.port && window.location.port !== '3000') {
+    const protocol = window.location.protocol;
+    return `${protocol}//${h}:3000${path.startsWith('/') ? path : '/' + path}`;
+  }
+  
+  return path;
+};
+
 export const getAuthToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const getAuthUser = () => {
@@ -41,12 +56,13 @@ export const authFetch = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, { ...options, headers });
+  const fullUrl = getApiUrl(url);
+  const response = await fetch(fullUrl, { ...options, headers });
 
   if (response.status === 401) {
     clearAuthSession();
     window.location.href = 'login.html';
-    throw new Error('Sesión expirada. Por favor inicie sesión de nuevo.');
+    throw new Error('Sesión expirada. Inicie sesión nuevamente.');
   }
 
   return response;
