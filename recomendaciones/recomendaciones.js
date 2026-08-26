@@ -138,9 +138,16 @@ function getApiUrl(path) {
   if (!path) return path;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   const h = window.location.hostname;
-  const isLocalNetwork = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h);
+  const proto = window.location.protocol;
+  const isFile = proto === 'file:' || !h;
+  const isLocalNetwork = isFile || h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h);
+  
+  if (isFile) {
+    return `http://127.0.0.1:3000${path.startsWith('/') ? path : '/' + path}`;
+  }
+
   if (isLocalNetwork && window.location.port && window.location.port !== '3000') {
-    return `${window.location.protocol}//${h}:3000${path.startsWith('/') ? path : '/' + path}`;
+    return `${proto}//${h || '127.0.0.1'}:3000${path.startsWith('/') ? path : '/' + path}`;
   }
   return path;
 }

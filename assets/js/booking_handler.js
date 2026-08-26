@@ -1,6 +1,24 @@
 /**
  * Manejador del Formulario Público de Reservas para Omikika B&B
  */
+function getApiUrl(path) {
+  if (!path) return path;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const h = window.location.hostname;
+  const proto = window.location.protocol;
+  const isFile = proto === 'file:' || !h;
+  const isLocalNetwork = isFile || h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h);
+  
+  if (isFile) {
+    return `http://127.0.0.1:3000${path.startsWith('/') ? path : '/' + path}`;
+  }
+
+  if (isLocalNetwork && window.location.port && window.location.port !== '3000') {
+    return `${proto}//${h || '127.0.0.1'}:3000${path.startsWith('/') ? path : '/' + path}`;
+  }
+  return path;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const btnBookNow = document.getElementById('btn_book_now');
   if (!btnBookNow) return;
@@ -82,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        const response = await fetch('/api/reservations', {
+        const response = await fetch(getApiUrl('/api/reservations'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -143,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        const response = await fetch('/api/inquiries', {
+        const response = await fetch(getApiUrl('/api/inquiries'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

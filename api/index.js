@@ -57,10 +57,9 @@ app.use('/api/*', (req, res) => {
 
 // Inicialización local
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, HOST, () => {
-    console.log(`🚀 Servidor Omikika B&B escuchando en http://${HOST}:${PORT} (Accesible en tu red local WiFi)`);
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor Omikika B&B escuchando en http://localhost:${PORT} y http://127.0.0.1:${PORT}`);
   });
 }
 
