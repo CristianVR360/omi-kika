@@ -593,14 +593,16 @@ router.delete('/reservations/:id', requireAdminAuth, async (req, res) => {
 router.get('/stats', requireAdminAuth, async (req, res) => {
   try {
     if (hasSupabaseConfigured) {
-      let { data, error } = await supabase.from('reservations').select('status, total_price, channel');
-      if (!error && (!data || data.length === 0)) {
-        const seeded = await ensureInitialReservationsSeeded();
-        if (seeded) {
-          const retry = await supabase.from('reservations').select('status, total_price, channel');
-          if (!retry.error) data = retry.data;
-        }
-      }
+      // Ejecutar las tres queries en paralelo para reducir latencia en producción
+      const [reservationsResult, roomsResult, inquiriesResult] = await Promise.all([
+        supabase.from('reservations').select('status, total_price, channel'),
+        supabase.from('rooms').select('id', { count: 'exact', head: true }),
+        supabase.from('inquiries').select('id', { count: 'exact', head: true })
+      ]);
+
+      const { data, error } = reservationsResult;
+      const roomsCount = roomsResult.count || 0;
+      const inquiriesCount = inquiriesResult.count || 0;
 
       if (!error && data) {
         const total = data.length;
@@ -620,13 +622,13 @@ router.get('/stats', requireAdminAuth, async (req, res) => {
 
         return res.json({
           success: true,
-          stats: { total, pending, confirmed, cancelled, revenue, channels }
+          stats: { total, pending, confirmed, cancelled, revenue, channels, rooms: roomsCount, inquiries: inquiriesCount }
         });
       } else if (error) {
         console.error('Error al obtener stats de Supabase:', error);
         return res.json({
           success: true,
-          stats: { total: 0, pending: 0, confirmed: 0, cancelled: 0, revenue: 0, channels: {} }
+          stats: { total: 0, pending: 0, confirmed: 0, cancelled: 0, revenue: 0, channels: {}, rooms: roomsCount, inquiries: inquiriesCount }
         });
       }
     }
@@ -639,6 +641,8 @@ router.get('/stats', requireAdminAuth, async (req, res) => {
         confirmed: 18, 
         cancelled: 4, 
         revenue: 1450000,
+        rooms: 4,
+        inquiries: 0,
         channels: {
           'Booking.com': 15,
           'Airbnb': 10,
@@ -651,6 +655,7 @@ router.get('/stats', requireAdminAuth, async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener métricas.' });
   }
 });
+
 
 /**
  * GET /api/admin/guests

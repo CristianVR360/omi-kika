@@ -72,3 +72,34 @@ export const authFetch = async (url, options = {}) => {
 
   return response;
 };
+
+/**
+ * Wrapper de authFetch con reintentos automáticos y backoff exponencial.
+ * Útil para mitigar cold starts de Vercel Serverless o latencia de red.
+ * @param {string} url - URL a solicitar
+ * @param {object} options - Opciones de fetch
+ * @param {number} maxRetries - Número máximo de reintentos (por defecto 3)
+ * @returns {Promise<Response>}
+ */
+export const authFetchWithRetry = async (url, options = {}, maxRetries = 3) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await authFetch(url, options);
+      // Solo reintentar en errores de servidor (5xx) o de red, no en 4xx
+      if (res.ok || (res.status >= 400 && res.status < 500)) {
+        return res;
+      }
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      // No reintentar si fue un 401 (redirige a login)
+      if (err.message && err.message.includes('Sesión expirada')) throw err;
+      lastError = err;
+    }
+    if (attempt < maxRetries) {
+      // Backoff exponencial: 800ms, 1600ms
+      await new Promise(r => setTimeout(r, 800 * attempt));
+    }
+  }
+  throw lastError;
+};

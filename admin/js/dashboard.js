@@ -1,4 +1,4 @@
-import { authFetch, checkAuthOrRedirect, clearAuthSession, getAuthUser } from './auth.js';
+import { authFetch, authFetchWithRetry, checkAuthOrRedirect, clearAuthSession, getAuthUser } from './auth.js';
 
 
 
@@ -16,13 +16,10 @@ let loadedRooms = [];
 let guestsData = [];
 let currentReservationsList = [];
 
-function initDashboard() {
+async function initDashboard() {
   setupUserInfo();
   setupSidebarToggle();
   setupTabNavigation();
-  loadStats();
-  loadRooms();
-  loadReservations();
   setupEventListeners();
   setupManualReservationModal();
   setupBlockDatesModal();
@@ -30,6 +27,12 @@ function initDashboard() {
   setupExportTools();
   setupSettingsTab();
   setupRecommendationsTab();
+  // Cargar datos críticos en paralelo con reintentos automáticos
+  await Promise.allSettled([
+    loadStats(),
+    loadRooms(),
+    loadReservations()
+  ]);
 }
 
 // Ejecutar init inmediatamente si el DOM ya está listo (soporte para ES Modules)
@@ -182,7 +185,7 @@ async function loadRooms() {
 
 async function loadStats() {
   try {
-    const res = await authFetch('/api/admin/stats');
+    const res = await authFetchWithRetry('/api/admin/stats');
     const data = await res.json();
     if (data.success && data.stats) {
       const elTotal = document.getElementById('stat-total');
@@ -220,6 +223,16 @@ async function loadStats() {
     }
   } catch (err) {
     console.error('Error cargando estadísticas:', err);
+    // Mostrar estado de error en cards de resumen con opción de reintento
+    ['stat-total', 'stat-pending', 'stat-confirmed', 'stat-revenue'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    const reloadArea = document.getElementById('stats-reload-area');
+    if (reloadArea) {
+      reloadArea.innerHTML = `<button onclick="loadStats()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.4rem 1rem;cursor:pointer;font-size:0.85rem;">🔄 Reintentar carga de estadísticas</button>`;
+      reloadArea.style.display = 'block';
+    }
   }
 }
 
@@ -238,7 +251,7 @@ async function loadReservations() {
       search: currentSearch
     });
 
-    const res = await authFetch(`/api/admin/reservations?${params.toString()}`);
+    const res = await authFetchWithRetry(`/api/admin/reservations?${params.toString()}`);
     const result = await res.json();
 
     if (!result.success) {
@@ -251,7 +264,11 @@ async function loadReservations() {
 
   } catch (err) {
     console.error('Error cargando reservas:', err);
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">No se pudieron cargar los datos de reservas. (${err.message})</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">
+      No se pudieron cargar los datos de reservas. (${err.message})
+      <br/><br/>
+      <button onclick="loadReservations()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+    </td></tr>`;
   }
 }
 
@@ -1687,3 +1704,7 @@ async function deleteRecommendationItem(id) {
   }
 }
 
+
+// Exponer funciones criticas de carga al scope global para botones de reintento (onclick en ES Module)
+window.loadStats = loadStats;
+window.loadReservations = loadReservations;
