@@ -337,17 +337,19 @@ body.cursor-hover .custom-cursor-outline {
 }
 
 /* Links List */
-.links-list {
+.links-list,
+.links-navigation {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .link-button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
   background: var(--color-card-bg);
   backdrop-filter: blur(12px);
@@ -364,6 +366,22 @@ body.cursor-hover .custom-cursor-outline {
   overflow: hidden;
 }
 
+.link-button.featured-link {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, #fffaf2 100%);
+  border: 1.5px solid rgba(200, 157, 91, 0.55);
+  box-shadow: 0 10px 28px rgba(200, 157, 91, 0.18);
+}
+
+.link-button.featured-link:hover {
+  border-color: var(--color-gold);
+  box-shadow: 0 14px 34px rgba(200, 157, 91, 0.28);
+}
+
+.link-button.featured-link .link-icon-box {
+  background-color: rgba(200, 157, 91, 0.18);
+  color: var(--color-gold-hover);
+}
+
 .link-button-content {
   display: flex;
   align-items: center;
@@ -373,6 +391,7 @@ body.cursor-hover .custom-cursor-outline {
 .link-icon-box {
   width: 38px;
   height: 38px;
+  flex-shrink: 0;
   border-radius: 10px;
   background-color: rgba(200, 157, 91, 0.12);
   color: var(--color-gold-hover);
@@ -384,6 +403,7 @@ body.cursor-hover .custom-cursor-outline {
 }
 
 .link-arrow {
+  flex-shrink: 0;
   color: #bbb;
   font-size: 1.1rem;
   transition: transform 0.25s ease, color 0.25s ease;
