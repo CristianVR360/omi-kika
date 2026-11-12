@@ -1,4 +1,17 @@
-import { authFetch, authFetchWithRetry, checkAuthOrRedirect, clearAuthSession, getAuthUser } from './auth.js';
+import { authFetch, authFetchJsonWithRetry, checkAuthOrRedirect, clearAuthSession, getAuthUser } from './auth.js';
+
+// Controladores para cancelar peticiones obsoletas al cambiar de pestaña o filtros
+const activeControllers = new Map();
+function startRequest(key) {
+  const prev = activeControllers.get(key);
+  if (prev) prev.abort();
+  const controller = new AbortController();
+  activeControllers.set(key, controller);
+  return {
+    signal: controller.signal,
+    isCurrent: () => activeControllers.get(key) === controller
+  };
+}
 
 
 
@@ -160,10 +173,12 @@ function setupTabNavigation() {
 }
 
 async function loadRooms() {
+  const { signal, isCurrent } = startRequest('rooms');
   try {
-    const res = await authFetch('/api/rooms');
-    const data = await res.json();
-    if (data.success && data.rooms) {
+    const { res, data } = await authFetchJsonWithRetry('/api/rooms', { signal });
+    if (!isCurrent()) return;
+
+    if (res.ok && data.success && Array.isArray(data.rooms)) {
       loadedRooms = data.rooms;
       
       const manualSelect = document.getElementById('manual-room');
@@ -171,23 +186,34 @@ async function loadRooms() {
       const editSelect = document.getElementById('edit-room');
 
       const roomOptionsHtml = loadedRooms.map(r => `
-        <option value="${r.id}">${r.name} (${r.size_m2 || 0}m² - Max ${r.capacity_adults} Adultos)</option>
+        <option value="${r.id}">${escapeHtml(r.name)} (${r.size_m2 || 0}m² - Max ${r.capacity_adults} Adultos)</option>
       `).join('');
 
       if (manualSelect) manualSelect.innerHTML = roomOptionsHtml;
       if (blockSelect) blockSelect.innerHTML = roomOptionsHtml;
       if (editSelect) editSelect.innerHTML = roomOptionsHtml;
+    } else {
+      throw new Error(data.error || 'No se pudo cargar la lista de habitaciones.');
     }
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error cargando lista de habitaciones:', err);
   }
 }
 
 async function loadStats() {
+  const { signal, isCurrent } = startRequest('stats');
+  const reloadArea = document.getElementById('stats-reload-area');
+  if (reloadArea) {
+    reloadArea.style.display = 'none';
+    reloadArea.innerHTML = '';
+  }
+
   try {
-    const res = await authFetchWithRetry('/api/admin/stats');
-    const data = await res.json();
-    if (data.success && data.stats) {
+    const { res, data } = await authFetchJsonWithRetry('/api/admin/stats', { signal });
+    if (!isCurrent()) return;
+
+    if (res.ok && data.success && data.stats) {
       const elTotal = document.getElementById('stat-total');
       const elPending = document.getElementById('stat-pending');
       const elConfirmed = document.getElementById('stat-confirmed');
@@ -220,17 +246,21 @@ async function loadStats() {
       const avgRevenue = totalCount > 0 ? Math.round(Number(data.stats.revenue || 0) / totalCount) : 0;
       const elAvgRevenue = document.getElementById('report-avg-revenue');
       if (elAvgRevenue) elAvgRevenue.textContent = `$${avgRevenue.toLocaleString('es-CL')} CLP`;
+    } else {
+      throw new Error(data.error || 'Respuesta inválida de estadísticas.');
     }
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error cargando estadísticas:', err);
-    // Mostrar estado de error en cards de resumen con opción de reintento
     ['stat-total', 'stat-pending', 'stat-confirmed', 'stat-revenue'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     });
-    const reloadArea = document.getElementById('stats-reload-area');
     if (reloadArea) {
-      reloadArea.innerHTML = `<button onclick="loadStats()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.4rem 1rem;cursor:pointer;font-size:0.85rem;">🔄 Reintentar carga de estadísticas</button>`;
+      reloadArea.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;padding:0.75rem 1rem;border-radius:8px;font-size:0.85rem;">
+        <span>⚠️ No se pudieron cargar las estadísticas (${escapeHtml(err.message)}).</span>
+        <button onclick="loadStats()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;">🔄 Reintentar</button>
+      </div>`;
       reloadArea.style.display = 'block';
     }
   }
@@ -240,6 +270,7 @@ async function loadReservations() {
   const tbody = document.getElementById('reservations-tbody');
   if (!tbody) return;
 
+  const { signal, isCurrent } = startRequest('reservations');
   tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando reservas...</td></tr>`;
 
   try {
@@ -251,11 +282,15 @@ async function loadReservations() {
       search: currentSearch
     });
 
-    const res = await authFetchWithRetry(`/api/admin/reservations?${params.toString()}`);
-    const result = await res.json();
+    const { res, data: result } = await authFetchJsonWithRetry(`/api/admin/reservations?${params.toString()}`, { signal });
+    if (!isCurrent()) return;
 
-    if (!result.success) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">Error: ${result.error}</td></tr>`;
+    if (!res.ok || !result.success) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">
+        Error: ${escapeHtml(result.error || `HTTP ${res.status}`)}
+        <br/><br/>
+        <button onclick="loadReservations()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+      </td></tr>`;
       return;
     }
 
@@ -263,9 +298,10 @@ async function loadReservations() {
     renderPagination(result.pagination);
 
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error cargando reservas:', err);
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #f87171; padding: 2rem;">
-      No se pudieron cargar los datos de reservas. (${err.message})
+      No se pudieron cargar los datos de reservas. (${escapeHtml(err.message)})
       <br/><br/>
       <button onclick="loadReservations()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
     </td></tr>`;
@@ -387,14 +423,19 @@ async function loadGuests() {
   const tbody = document.getElementById('guests-tbody');
   if (!tbody) return;
 
+  const { signal, isCurrent } = startRequest('guests');
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando huéspedes...</td></tr>`;
 
   try {
-    const res = await authFetch('/api/admin/guests');
-    const result = await res.json();
+    const { res, data: result } = await authFetchJsonWithRetry('/api/admin/guests', { signal });
+    if (!isCurrent()) return;
 
-    if (!result.success) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">Error: ${result.error}</td></tr>`;
+    if (!res.ok || !result.success) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">
+        Error: ${escapeHtml(result.error || `HTTP ${res.status}`)}
+        <br/><br/>
+        <button onclick="loadGuests()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+      </td></tr>`;
       return;
     }
 
@@ -402,8 +443,13 @@ async function loadGuests() {
     renderGuestsTable(guestsData);
 
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error cargando huéspedes:', err);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">No se pudieron cargar los datos de huéspedes.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">
+      No se pudieron cargar los datos de huéspedes. (${escapeHtml(err.message)})
+      <br/><br/>
+      <button onclick="loadGuests()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+    </td></tr>`;
   }
 }
 
@@ -415,9 +461,9 @@ function renderGuestsTable(data) {
   if (currentGuestSearch) {
     const query = currentGuestSearch.toLowerCase();
     filtered = data.filter(g => 
-      g.name.toLowerCase().includes(query) || 
-      g.email.toLowerCase().includes(query) || 
-      g.phone.toLowerCase().includes(query)
+      (g.name || '').toLowerCase().includes(query) || 
+      (g.email || '').toLowerCase().includes(query) || 
+      (g.phone || '').toLowerCase().includes(query)
     );
   }
 
@@ -445,14 +491,19 @@ async function loadInquiries() {
   const tbody = document.getElementById('inquiries-tbody');
   if (!tbody) return;
 
+  const { signal, isCurrent } = startRequest('inquiries');
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando bandeja de consultas...</td></tr>`;
 
   try {
-    const res = await authFetch('/api/inquiries/admin');
-    const result = await res.json();
+    const { res, data: result } = await authFetchJsonWithRetry('/api/inquiries/admin', { signal });
+    if (!isCurrent()) return;
 
-    if (!result.success) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">Error: ${result.error}</td></tr>`;
+    if (!res.ok || !result.success) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">
+        Error: ${escapeHtml(result.error || `HTTP ${res.status}`)}
+        <br/><br/>
+        <button onclick="loadInquiries()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+      </td></tr>`;
       return;
     }
 
@@ -460,8 +511,13 @@ async function loadInquiries() {
     renderInquiriesTable(inquiriesData);
 
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error cargando consultas:', err);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">No se pudieron cargar los mensajes.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171; padding: 2rem;">
+      No se pudieron cargar los mensajes. (${escapeHtml(err.message)})
+      <br/><br/>
+      <button onclick="loadInquiries()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+    </td></tr>`;
   }
 }
 
@@ -715,9 +771,8 @@ function setupExportTools() {
   if (btnRes) {
     btnRes.addEventListener('click', async () => {
       try {
-        const res = await authFetch('/api/admin/reservations?limit=500'); // Cargar hasta 500 para exportar
-        const result = await res.json();
-        if (result.success && result.data) {
+        const { res, data: result } = await authFetchJsonWithRetry('/api/admin/reservations?limit=500'); // Cargar hasta 500 para exportar
+        if (res.ok && result.success && result.data) {
           const headers = ['Canal/Plataforma', 'Huésped', 'Email', 'Teléfono', 'Check-in', 'Check-out', 'Adultos', 'Niños', 'Total CLP', 'Estado', 'Notas'];
           const rows = result.data.map(item => [
             item.channel,
@@ -733,6 +788,8 @@ function setupExportTools() {
             item.notes || ''
           ]);
           downloadCSV('informe-reservas-omikika.csv', headers, rows);
+        } else {
+          throw new Error(result.error || 'No se pudieron obtener las reservas.');
         }
       } catch (err) {
         alert('Error al exportar reservas: ' + err.message);
@@ -743,9 +800,8 @@ function setupExportTools() {
   if (btnGst) {
     btnGst.addEventListener('click', async () => {
       try {
-        const res = await authFetch('/api/admin/guests');
-        const result = await res.json();
-        if (result.success && result.data) {
+        const { res, data: result } = await authFetchJsonWithRetry('/api/admin/guests');
+        if (res.ok && result.success && result.data) {
           const headers = ['Nombre Completo', 'Email', 'Teléfono', 'Total Estadías', 'Total Invertido (CLP)', 'Último Check-in'];
           const rows = result.data.map(g => [
             g.name,
@@ -756,6 +812,8 @@ function setupExportTools() {
             g.last_stay
           ]);
           downloadCSV('directorio-huespedes-omikika.csv', headers, rows);
+        } else {
+          throw new Error(result.error || 'No se pudieron obtener los huéspedes.');
         }
       } catch (err) {
         alert('Error al exportar huéspedes: ' + err.message);
@@ -1244,14 +1302,15 @@ async function loadRoomCalendar(roomId, startDate) {
   const grid = document.getElementById('settings-calendar-grid');
   if (!grid) return;
 
+  const { signal, isCurrent } = startRequest('calendar');
   grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8;">Cargando calendario...</div>';
 
   try {
-    const res = await authFetch(`/api/admin/rooms/${roomId}/calendar?start_date=${startDate}`);
-    const data = await res.json();
+    const { res, data } = await authFetchJsonWithRetry(`/api/admin/rooms/${roomId}/calendar?start_date=${startDate}`, { signal });
+    if (!isCurrent()) return;
 
-    if (!data.success) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #f87171;">Error: ${data.error}</div>`;
+    if (!res.ok || !data.success) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #f87171;">Error: ${escapeHtml(data.error || `HTTP ${res.status}`)}</div>`;
       return;
     }
 
@@ -1316,7 +1375,8 @@ async function loadRoomCalendar(roomId, startDate) {
     });
 
   } catch (err) {
-    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #f87171;">Error al consultar calendario: ${err.message}</div>`;
+    if (err.name === 'AbortError') return;
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #f87171;">Error al consultar calendario: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -1426,6 +1486,7 @@ async function loadAdminRecommendations() {
   const tbody = document.getElementById('table-recommendations-body');
   if (!tbody) return;
 
+  const { signal, isCurrent } = startRequest('recommendations');
   tbody.innerHTML = `
     <tr>
       <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
@@ -1435,26 +1496,23 @@ async function loadAdminRecommendations() {
   `;
 
   try {
-    const res = await authFetch('/api/recommendations/admin');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && Array.isArray(data.recommendations)) {
-        adminRecommendationsList = data.recommendations;
-      } else {
-        adminRecommendationsList = [];
-      }
+    const { res, data } = await authFetchJsonWithRetry('/api/recommendations/admin', { signal });
+    if (!isCurrent()) return;
+
+    if (res.ok && data.success && Array.isArray(data.recommendations)) {
+      adminRecommendationsList = data.recommendations;
     } else {
-      console.warn('Endpoint admin/recommendations no retornó ok, intentando GET público...');
-      const publicRes = await authFetch('/api/recommendations');
-      const publicData = await publicRes.json();
-      adminRecommendationsList = publicData.recommendations || [];
+      throw new Error(data.error || `HTTP ${res.status}`);
     }
   } catch (err) {
+    if (err.name === 'AbortError') return;
     console.error('Error al cargar recomendaciones admin:', err);
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 2rem; color: #f87171;">
           ⚠️ Error al cargar las recomendaciones: ${escapeHtml(err.message)}
+          <br/><br/>
+          <button onclick="loadAdminRecommendations()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
         </td>
       </tr>
     `;
@@ -1707,4 +1765,8 @@ async function deleteRecommendationItem(id) {
 
 // Exponer funciones criticas de carga al scope global para botones de reintento (onclick en ES Module)
 window.loadStats = loadStats;
+window.loadRooms = loadRooms;
 window.loadReservations = loadReservations;
+window.loadGuests = loadGuests;
+window.loadInquiries = loadInquiries;
+window.loadAdminRecommendations = loadAdminRecommendations;

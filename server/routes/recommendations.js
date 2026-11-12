@@ -120,7 +120,12 @@ router.get('/', async (req, res) => {
 
       const { data, error } = await query;
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error al consultar recomendaciones en Supabase:', error);
+        if (error.code !== 'PGRST205') {
+          return res.status(500).json({ error: 'Error al consultar recomendaciones en la base de datos.' });
+        }
+      } else if (data) {
         return res.json({ success: true, recommendations: data });
       }
     }
@@ -152,7 +157,12 @@ router.get('/admin', requireAdminAuth, async (req, res) => {
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error al consultar recomendaciones admin en Supabase:', error);
+        if (error.code !== 'PGRST205') {
+          return res.status(500).json({ error: 'Error al consultar recomendaciones en la base de datos.' });
+        }
+      } else if (data) {
         return res.json({ success: true, recommendations: data });
       }
     }

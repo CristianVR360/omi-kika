@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { supabase, hasSupabaseConfigured } from '../config/supabase.js';
+import { supabase, createAuthClient, hasSupabaseConfigured } from '../config/supabase.js';
 import { requireAdminAuth } from '../middleware/auth.js';
 import { sendStatusUpdateEmail } from '../services/emailService.js';
 
@@ -59,18 +59,27 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Proporcione email y contraseña.' });
     }
 
-    // 1. Intentar verificar con Supabase Auth si está configurado
+    const jwtSecret = process.env.JWT_SECRET || 'omikika-secret-key-2026';
+
+    // 1. Intentar verificar con Supabase Auth en cliente aislado si está configurado
     if (hasSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const authClient = createAuthClient();
+        const { data, error } = await authClient.auth.signInWithPassword({
           email,
           password
         });
 
-        if (!error && data && data.session) {
+        if (!error && data && data.user) {
+          // Emitir JWT interno de 24h para evitar expiración de 1h y round-trips extra a Auth en cada petición
+          const token = jwt.sign(
+            { email: data.user.email, id: data.user.id, role: 'admin' },
+            jwtSecret,
+            { expiresIn: '24h' }
+          );
           return res.json({
             success: true,
-            token: data.session.access_token,
+            token,
             user: { email: data.user.email, id: data.user.id }
           });
         }
@@ -80,7 +89,6 @@ router.post('/login', async (req, res) => {
     }
 
     // 2. Fallback a credenciales locales definidas en .env si falla Supabase Auth
-    const jwtSecret = process.env.JWT_SECRET || 'omikika-secret-key-2026';
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
 
@@ -201,8 +209,8 @@ const ensureInitialReservationsSeeded = async () => {
  */
 router.get('/reservations', requireAdminAuth, async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const status = req.query.status || 'all';
     const channel = req.query.channel || 'all';
     const search = (req.query.search || '').trim();
@@ -604,7 +612,25 @@ router.get('/stats', requireAdminAuth, async (req, res) => {
       const roomsCount = roomsResult.count || 0;
       const inquiriesCount = inquiriesResult.count || 0;
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error al obtener stats de Supabase:', error);
+        if (error.code === 'PGRST205' || error.message?.includes('public.reservations')) {
+          return res.json({
+            success: true,
+            stats: { total: 0, pending: 0, confirmed: 0, cancelled: 0, revenue: 0, channels: {}, rooms: roomsCount, inquiries: inquiriesCount }
+          });
+        }
+        return res.status(500).json({ error: 'Error al consultar métricas en la base de datos.' });
+      }
+
+      if (roomsResult.error && roomsResult.error.code !== 'PGRST205') {
+        console.warn('Advertencia al contar habitaciones en stats:', roomsResult.error.message);
+      }
+      if (inquiriesResult.error && inquiriesResult.error.code !== 'PGRST205') {
+        console.warn('Advertencia al contar consultas en stats:', inquiriesResult.error.message);
+      }
+
+      if (data) {
         const total = data.length;
         const pending = data.filter(r => r.status === 'pending').length;
         const confirmed = data.filter(r => r.status === 'confirmed').length;
@@ -623,12 +649,6 @@ router.get('/stats', requireAdminAuth, async (req, res) => {
         return res.json({
           success: true,
           stats: { total, pending, confirmed, cancelled, revenue, channels, rooms: roomsCount, inquiries: inquiriesCount }
-        });
-      } else if (error) {
-        console.error('Error al obtener stats de Supabase:', error);
-        return res.json({
-          success: true,
-          stats: { total: 0, pending: 0, confirmed: 0, cancelled: 0, revenue: 0, channels: {}, rooms: roomsCount, inquiries: inquiriesCount }
         });
       }
     }
@@ -687,36 +707,46 @@ router.get('/guests', requireAdminAuth, async (req, res) => {
       }));
     }
 
-    // Agregar huéspedes en memoria
+    // Agregar huéspedes en memoria (excluyendo bloqueos administrativos)
     const guestsMap = {};
     reservations.forEach(r => {
-      const email = (r.guest_email || '').trim().toLowerCase();
-      if (!email) return;
+      if (r.status === 'blocked') return;
+
+      const rawEmail = (r.guest_email || '').trim().toLowerCase();
+      if (rawEmail === 'bloqueo@admin.local') return;
 
       const name = r.guest_name || 'Huésped sin nombre';
       const phone = r.guest_phone || 'Sin teléfono';
+      const isPlaceholderEmail = !rawEmail || rawEmail === 'sin-email@manual.local';
+      const guestKey = isPlaceholderEmail
+        ? `manual:${name.trim().toLowerCase()}:${phone.trim().toLowerCase()}`
+        : rawEmail;
 
-      if (!guestsMap[email]) {
-        guestsMap[email] = {
+      if (!guestsMap[guestKey]) {
+        guestsMap[guestKey] = {
           name,
-          email,
+          email: rawEmail || 'Sin correo',
           phone,
           total_reservations: 0,
           total_spent: 0,
-          last_stay: r.check_in
+          last_stay: r.check_in || null
         };
       }
 
-      guestsMap[email].total_reservations++;
+      guestsMap[guestKey].total_reservations++;
 
       // Sumar ingresos solo de reservas válidas
       if (r.status === 'confirmed' || r.status === 'completed') {
-        guestsMap[email].total_spent += Number(r.total_price || 0);
+        guestsMap[guestKey].total_spent += Number(r.total_price || 0);
       }
 
       // Última fecha de check-in
-      if (new Date(r.check_in) > new Date(guestsMap[email].last_stay)) {
-        guestsMap[email].last_stay = r.check_in;
+      if (r.check_in) {
+        const currentStay = new Date(r.check_in);
+        const prevStay = guestsMap[guestKey].last_stay ? new Date(guestsMap[guestKey].last_stay) : null;
+        if (!isNaN(currentStay.getTime()) && (!prevStay || isNaN(prevStay.getTime()) || currentStay > prevStay)) {
+          guestsMap[guestKey].last_stay = r.check_in;
+        }
       }
     });
 
@@ -905,6 +935,10 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
         .select('*')
         .eq('id', room_id)
         .single();
+      if (roomErr && roomErr.code !== 'PGRST116' && roomErr.code !== 'PGRST205') {
+        console.error('Error al consultar habitación para calendario:', roomErr);
+        return res.status(500).json({ error: 'Error al consultar la habitación en la base de datos.' });
+      }
       if (!roomErr && room) {
         basePrice = Number(room.price_per_night);
         roomName = room.name;
@@ -935,6 +969,10 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
         .eq('room_id', room_id)
         .in('date', dateStrings);
 
+      if (error && error.code !== 'PGRST205') {
+        console.error('Error al consultar precios especiales para calendario:', error);
+        return res.status(500).json({ error: 'Error al consultar tarifas especiales en la base de datos.' });
+      }
       if (!error && data) {
         specialPrices = data;
       }
@@ -963,6 +1001,10 @@ router.get('/rooms/:id/calendar', requireAdminAuth, async (req, res) => {
         .lte('check_in', maxDate)
         .gte('check_out', minDate);
 
+      if (error && error.code !== 'PGRST205') {
+        console.error('Error al consultar reservas para calendario:', error);
+        return res.status(500).json({ error: 'Error al consultar ocupación en la base de datos.' });
+      }
       if (!error && data) {
         reservations = data;
       }

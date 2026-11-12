@@ -20,12 +20,17 @@ router.get('/', async (req, res) => {
         .eq('is_active', true)
         .order('name', { ascending: true });
 
-      if (!error && data && data.length > 0) {
+      if (error) {
+        console.error('Error al consultar habitaciones en Supabase:', error);
+        if (error.code !== 'PGRST205') {
+          return res.status(500).json({ error: 'Error al consultar habitaciones en la base de datos.' });
+        }
+      } else if (data && data.length > 0) {
         return res.json({ success: true, rooms: data });
       }
     }
     
-    // Fallback si no hay conexión a Supabase configurada aún
+    // Fallback solo si Supabase no está configurado o la tabla aún no existe
     return res.json({ success: true, rooms: DEFAULT_ROOMS, source: 'fallback' });
   } catch (err) {
     console.error('Error al obtener habitaciones:', err);

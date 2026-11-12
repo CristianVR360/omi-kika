@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { supabase } from '../config/supabase.js';
+import { createAuthClient, hasSupabaseConfigured } from '../config/supabase.js';
 
 export const requireAdminAuth = async (req, res, next) => {
   try {
@@ -17,12 +17,18 @@ export const requireAdminAuth = async (req, res, next) => {
       req.user = decoded;
       return next();
     } catch (jwtErr) {
-      // 2. Si falla JWT interno, intentar verificar con Supabase Auth
-      if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-        const { data: { user }, error } = await supabase.auth.getUser(token);
-        if (!error && user) {
-          req.user = user;
-          return next();
+      // 2. Fallback: verificar con Supabase Auth en cliente aislado
+      if (hasSupabaseConfigured) {
+        try {
+          const authClient = createAuthClient();
+          const { data: { user }, error } = await authClient.auth.getUser(token);
+          if (!error && user) {
+            req.user = user;
+            return next();
+          }
+        } catch (supabaseAuthErr) {
+          console.error('Error de red al verificar token con Supabase Auth:', supabaseAuthErr);
+          return res.status(503).json({ error: 'Servicio de autenticación temporalmente no disponible.' });
         }
       }
       return res.status(401).json({ error: 'Token inválido o expirado. Inicie sesión nuevamente.' });

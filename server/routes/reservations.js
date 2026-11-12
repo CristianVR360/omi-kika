@@ -155,6 +155,7 @@ router.post('/', async (req, res) => {
 
       if (insertError) {
         console.error('Error insertando reserva en Supabase:', insertError);
+        return res.status(500).json({ error: 'No se pudo registrar la reserva en la base de datos. Inténtalo nuevamente.' });
       } else if (inserted && inserted.length > 0) {
         createdReservation = inserted[0];
       }
@@ -187,7 +188,7 @@ router.get('/check-availability', async (req, res) => {
       return res.status(400).json({ error: 'Debe especificar check_in y check_out.' });
     }
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && room_id) {
+    if (hasSupabaseConfigured && room_id) {
       const { data: overlap, error } = await supabase
         .from('reservations')
         .select('id')
@@ -215,7 +216,7 @@ router.get('/booked-dates', async (req, res) => {
   try {
     const { room_id, room_name } = req.query;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       let targetRoomId = room_id;
 
       // Si nos envían el nombre de la habitación (ej: 'Apartamento - Planta baja (70 m²)'), buscamos su UUID en Supabase
@@ -284,7 +285,7 @@ router.get('/calculate-price', async (req, res) => {
     let targetRoomId = null;
     let pricePerNight = 45000;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (hasSupabaseConfigured) {
       const cleanName = room_name.replace(/\s*\(\d+\s*m²\)/gi, '').trim();
       const { data: roomsFound } = await supabase
         .from('rooms')
@@ -308,7 +309,7 @@ router.get('/calculate-price', async (req, res) => {
     const nights = daysList.length;
     let totalPrice = 0;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && targetRoomId) {
+    if (hasSupabaseConfigured && targetRoomId) {
       const { data: customPrices, error: cpErr } = await supabase
         .from('room_prices')
         .select('date, price')
