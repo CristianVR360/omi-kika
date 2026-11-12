@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS public.reservations (
     status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'confirmed', 'cancelled', 'completed', 'blocked'
     total_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     notes TEXT,
+    privacy_consent BOOLEAN DEFAULT FALSE,
+    privacy_consent_at TIMESTAMP WITH TIME ZONE,
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    consent_version VARCHAR(32) DEFAULT '2026-11',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -75,6 +79,10 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
     subject VARCHAR(255),
     message TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'new', -- 'new', 'read', 'replied'
+    privacy_consent BOOLEAN DEFAULT FALSE,
+    privacy_consent_at TIMESTAMP WITH TIME ZONE,
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    consent_version VARCHAR(32) DEFAULT '2026-11',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -143,3 +151,29 @@ INSERT INTO public.reservations (room_id, channel, guest_name, guest_email, gues
 SELECT id, 'Airbnb', 'Carlos Benítez', 'carlos.b@example.com', '+56 9 7654 3210', '2026-08-12', '2026-08-15', 2, 0, 'confirmed', 135000.00, 'Llegada tarde coordinada'
 FROM public.rooms WHERE slug = 'habitacion-doble'
 LIMIT 1;
+
+-- 9. Tabla de Solicitudes ARCOP + Bloqueo (Ley N° 21.719)
+CREATE TABLE IF NOT EXISTS public.privacy_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tracking_code VARCHAR(40) UNIQUE NOT NULL,
+    request_type VARCHAR(30) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    rut_or_id VARCHAR(50),
+    details TEXT NOT NULL,
+    privacy_consent BOOLEAN NOT NULL DEFAULT TRUE,
+    consent_version VARCHAR(32) DEFAULT '2026-11',
+    status VARCHAR(30) DEFAULT 'pending',
+    admin_notes TEXT,
+    due_date DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '15 days'),
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.privacy_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Permitir inserción pública de solicitudes ARCOP" ON public.privacy_requests;
+CREATE POLICY "Permitir inserción pública de solicitudes ARCOP" ON public.privacy_requests
+FOR INSERT WITH CHECK (true);

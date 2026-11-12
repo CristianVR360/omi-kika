@@ -49,6 +49,10 @@
           <span class="nav-icon">⚙️</span>
           <span>Configuración</span>
         </a>
+        <a href="#" class="nav-item" data-target="view-privacy">
+          <span class="nav-icon">🔒</span>
+          <span>Privacidad / ARCOP</span>
+        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -607,6 +611,53 @@
 
         </div>
 
+        <!-- ========================================== -->
+        <!-- 6. VISTA: PRIVACIDAD & DERECHOS ARCOP      -->
+        <!-- ========================================== -->
+        <div id="view-privacy" class="admin-view-section" style="display: none;">
+          <div class="header-actions-row">
+            <div class="page-headline">
+              <h2>Privacidad &amp; Derechos ARCOP (Ley N° 21.719)</h2>
+              <p>Gestión de solicitudes de Acceso, Rectificación, Supresión, Oposición, Portabilidad y Bloqueo.</p>
+            </div>
+          </div>
+
+          <div class="chart-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-flex">
+              <div>
+                <h3 class="card-title">Herramientas Rápidas por Titular</h3>
+                <div class="card-subtitle">Atiende requerimientos de portabilidad o supresión recibidos por formulario, correo o WhatsApp</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+              <input type="email" id="privacy-lookup-email" class="form-control-admin" placeholder="Correo del titular (ej: huesped@ejemplo.com)" style="flex:1 1 280px;background:#0f172a;margin:0;">
+              <button type="button" id="btn-privacy-export" class="btn-add-manual" style="background:#3b82f6;">📦 Exportar Portabilidad (JSON)</button>
+              <button type="button" id="btn-privacy-anonymize" class="btn-action" style="background:#dc2626;color:#fff;border:none;padding:0.65rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;">🗑️ Suprimir / Anonimizar Datos</button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Código / Fecha</th>
+                    <th>Titular</th>
+                    <th>Derecho</th>
+                    <th>Detalle</th>
+                    <th>Límite Legal</th>
+                    <th>Estado</th>
+                    <th style="text-align:right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="privacy-tbody">
+                  <tr><td colspan="7" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando solicitudes ARCOP...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
 
     </div>
@@ -985,6 +1036,6 @@
   <!-- BOTÓN FLOTANTE MÓVIL (FAB) -->
   <button class="mobile-fab" id="mobile-fab-add" title="Crear Reserva Manual">+</button>
 
-  <script type="module" src="/admin/js/dashboard.js?v=11"></script>
+  <script type="module" src="/admin/js/dashboard.js?v=12"></script>
 </body>
 </html>

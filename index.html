@@ -183,7 +183,8 @@
                             </div>
                             <div class="map-responsive mt-3">
                                 <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3065.6763520102143!2d-72.2251287!3d-39.2837698!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9614623aecc3eedf%3A0xe3b530fd6534b54!2sB%26B%20Omi%20Kika!5e0!3m2!1ses!2scl!4v1700000000000!5m2!1ses!2scl"
+                                    data-consent-category="third_party"
+                                    data-src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3065.6763520102143!2d-72.2251287!3d-39.2837698!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9614623aecc3eedf%3A0xe3b530fd6534b54!2sB%26B%20Omi%20Kika!5e0!3m2!1ses!2scl!4v1700000000000!5m2!1ses!2scl"
                                     width="100%" height="220"
                                     style="border:0; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);"
                                     allowfullscreen="" loading="lazy"
@@ -640,6 +641,22 @@
                                 placeholder="Escribe aquí en detalle tu mensaje o consulta..." required
                                 style="padding: 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%; font-family: inherit;"></textarea>
                         </div>
+                        <div class="col-md-12 mb-3">
+                            <div class="p-3 rounded" style="background-color:#f8fafc;border:1px solid #e2e8f0;font-size:0.85rem;color:#334155;">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="contact_privacy_consent" required>
+                                    <label class="form-check-label" for="contact_privacy_consent">
+                                        He leído y acepto la <a href="privacidad.html" target="_blank" rel="noopener" style="color:#2b6cb0;text-decoration:underline;">Política de Privacidad</a> y autorizo el tratamiento de mis datos personales para responder esta consulta conforme a la Ley N° 21.719. *
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="contact_marketing_consent">
+                                    <label class="form-check-label" for="contact_marketing_consent" style="color:#475569;">
+                                        Deseo recibir promociones, novedades y descuentos especiales de Omikika B&B (opcional).
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12 text-center">
                             <button type="submit" id="btn-send-contact" class="btn_1 outline"
                                 style="padding: 12px 35px; border-radius: 6px; font-weight:600; background: #1f2937; color:#fff; border:none; cursor:pointer; transition: all 0.2s;">Enviar
@@ -691,12 +708,13 @@
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <h5>Información</h5>
+                    <h5>Privacidad &amp; Información</h5>
                     <div class="footer_links">
                         <ul>
-                            <li>WiFi gratuito</li>
-                            <li>Política de no fumadores</li>
-                            <li>Entrada privada</li>
+                            <li><a href="privacidad.html">Política de Privacidad (Ley 21.719)</a></li>
+                            <li><a href="privacidad.html#derechos-arco">Ejercer Derechos ARCOP</a></li>
+                            <li><a href="#0" data-open-cookie-settings>Configurar Cookies</a></li>
+                            <li>WiFi gratuito · No fumadores</li>
                         </ul>
                     </div>
                 </div>
@@ -728,6 +746,7 @@
     <!-- SPECIFIC SCRIPTS -->
     <script src="assets/js/slider.js"></script>
     <script src="assets/js/booking_handler.js"></script>
+    <script src="assets/js/privacy_consent.js"></script>
 
     <!-- Floating WhatsApp Button -->
     <a href="https://wa.me/56968365197" class="float-whatsapp" target="_blank" rel="noopener"

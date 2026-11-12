@@ -29,12 +29,21 @@ router.post('/', async (req, res) => {
       check_out,
       adults = 1,
       children = 0,
-      notes = ''
+      notes = '',
+      privacy_consent,
+      marketing_consent = false,
+      consent_version = '2026-11'
     } = req.body;
 
-    // 1. Validaciones básicas
+    // 1. Validaciones básicas y consentimiento expreso (Ley N° 21.719)
     if (!guest_name || !guest_email || !guest_phone || !check_in || !check_out) {
       return res.status(400).json({ error: 'Por favor complete todos los campos obligatorios.' });
+    }
+
+    if (privacy_consent !== true) {
+      return res.status(400).json({
+        error: 'Debe aceptar expresamente la Política de Privacidad para procesar su solicitud de reserva.'
+      });
     }
 
     const startDate = new Date(check_in);
@@ -141,17 +150,30 @@ router.post('/', async (req, res) => {
       children: parseInt(children, 10),
       status: 'pending',
       total_price: totalPrice,
-      notes
+      notes,
+      privacy_consent: true,
+      privacy_consent_at: new Date().toISOString(),
+      marketing_consent: Boolean(marketing_consent),
+      consent_version: String(consent_version || '2026-11')
     };
 
     let createdReservation = { ...newReservationData, id: 'res-' + Date.now() };
 
     // 4. Insertar en Supabase si está activo
     if (hasSupabaseConfigured) {
-      const { data: inserted, error: insertError } = await supabase
+      let { data: inserted, error: insertError } = await supabase
         .from('reservations')
         .insert([newReservationData])
         .select();
+
+      // Si las columnas de consentimiento aún no existen en Supabase, reintentar sin ellas
+      if (insertError && (insertError.code === 'PGRST204' || insertError.message?.includes('privacy_consent'))) {
+        console.warn('[LEY 21.719] Columnas de consentimiento pendientes de migración en reservations; ejecutando insert base.');
+        const { privacy_consent: _pc, privacy_consent_at: _pca, marketing_consent: _mc, consent_version: _cv, ...baseData } = newReservationData;
+        const retry = await supabase.from('reservations').insert([baseData]).select();
+        inserted = retry.data;
+        insertError = retry.error;
+      }
 
       if (insertError) {
         console.error('Error insertando reserva en Supabase:', insertError);

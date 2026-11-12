@@ -33,6 +33,10 @@
       "dest": "/recomendaciones/index.html"
     },
     {
+      "src": "/privacidad$",
+      "dest": "/privacidad.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }

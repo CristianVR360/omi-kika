@@ -34,10 +34,14 @@ let mockInquiries = [
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, subject, message } = req.body;
+    const { name, email, phone, subject, message, privacy_consent, marketing_consent = false, consent_version = '2026-11' } = req.body;
 
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Por favor, complete los campos obligatorios: Nombre, Email y Mensaje.' });
+    }
+
+    if (privacy_consent !== true) {
+      return res.status(400).json({ error: 'Debe aceptar expresamente la Política de Privacidad para enviar su consulta.' });
     }
 
     const newInquiry = {
@@ -46,16 +50,28 @@ router.post('/', async (req, res) => {
       phone: phone ? phone.trim() : null,
       subject: subject ? subject.trim() : 'Consulta general',
       message: message.trim(),
-      status: 'new'
+      status: 'new',
+      privacy_consent: true,
+      privacy_consent_at: new Date().toISOString(),
+      marketing_consent: Boolean(marketing_consent),
+      consent_version: String(consent_version || '2026-11')
     };
 
     let created = { ...newInquiry, id: 'inq-manual-' + Date.now(), created_at: new Date().toISOString() };
 
     if (hasSupabaseConfigured) {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('inquiries')
         .insert([newInquiry])
         .select('*');
+
+      if (error && (error.code === 'PGRST204' || error.message?.includes('privacy_consent'))) {
+        console.warn('[LEY 21.719] Columnas de consentimiento pendientes de migración en inquiries; ejecutando insert base.');
+        const { privacy_consent: _pc, privacy_consent_at: _pca, marketing_consent: _mc, consent_version: _cv, ...baseInquiry } = newInquiry;
+        const retry = await supabase.from('inquiries').insert([baseInquiry]).select('*');
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error('Error al insertar consulta en Supabase:', error);

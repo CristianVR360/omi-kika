@@ -87,6 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const adults = document.getElementById('adults_booking')?.value || 1;
       const children = document.getElementById('childs_booking')?.value || 0;
 
+      const privacyConsentEl = document.getElementById('booking_privacy_consent');
+      const marketingConsentEl = document.getElementById('booking_marketing_consent');
+
+      if (!privacyConsentEl || !privacyConsentEl.checked) {
+        alertDiv.textContent = 'Debes aceptar la Política de Privacidad para procesar tu solicitud de reserva.';
+        alertDiv.style.display = 'block';
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Solicitar Reserva';
+        return;
+      }
+
       const payload = {
         room_name: roomName.replace(/\s*\(\d+\s*m²\)/gi, '').trim(),
         check_in: dateIn,
@@ -96,7 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
         guest_name: document.getElementById('guest_name').value.trim(),
         guest_email: document.getElementById('guest_email').value.trim(),
         guest_phone: document.getElementById('guest_phone').value.trim(),
-        notes: document.getElementById('guest_notes').value.trim()
+        notes: document.getElementById('guest_notes').value.trim(),
+        privacy_consent: true,
+        marketing_consent: Boolean(marketingConsentEl && marketingConsentEl.checked),
+        consent_version: '2026-11'
       };
 
       try {
@@ -152,12 +166,33 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSend.textContent = 'Enviando consulta...';
       }
 
+      const contactPrivacyEl = document.getElementById('contact_privacy_consent');
+      const contactMarketingEl = document.getElementById('contact_marketing_consent');
+
+      if (!contactPrivacyEl || !contactPrivacyEl.checked) {
+        if (alertDiv) {
+          alertDiv.textContent = 'Debes aceptar expresamente la Política de Privacidad para enviar tu consulta.';
+          alertDiv.style.backgroundColor = '#f8d7da';
+          alertDiv.style.color = '#842029';
+          alertDiv.style.border = '1px solid #f5c2c7';
+          alertDiv.style.display = 'block';
+        }
+        if (btnSend) {
+          btnSend.disabled = false;
+          btnSend.textContent = 'Enviar Mensaje';
+        }
+        return;
+      }
+
       const payload = {
         name: document.getElementById('contact-name').value.trim(),
         email: document.getElementById('contact-email').value.trim(),
         phone: document.getElementById('contact-phone').value.trim(),
         subject: document.getElementById('contact-subject').value.trim(),
-        message: document.getElementById('contact-message').value.trim()
+        message: document.getElementById('contact-message').value.trim(),
+        privacy_consent: true,
+        marketing_consent: Boolean(contactMarketingEl && contactMarketingEl.checked),
+        consent_version: '2026-11'
       };
 
       try {
@@ -273,9 +308,24 @@ function createBookingModal() {
                 <input type="tel" class="form-control" id="guest_phone" placeholder="+56 9 1234 5678" required>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <label for="guest_notes" class="form-label" style="font-size: 0.85rem; font-weight: 500;">Comentarios o Solicitudes Especiales</label>
                 <textarea class="form-control" id="guest_notes" rows="2" placeholder="Hora estimada de llegada, etc."></textarea>
+              </div>
+
+              <div class="p-3 rounded" style="background-color:#f8fafc;border:1px solid #e2e8f0;font-size:0.8rem;color:#334155;">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="booking_privacy_consent" required>
+                  <label class="form-check-label" for="booking_privacy_consent" style="line-height:1.4;">
+                    He leído y acepto la <a href="/privacidad.html" target="_blank" rel="noopener" style="color:#2b6cb0;text-decoration:underline;">Política de Privacidad</a> y autorizo el tratamiento de mis datos (y de menores a mi cargo, si corresponde) para gestionar esta reserva conforme a la Ley N° 21.719. *
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="booking_marketing_consent">
+                  <label class="form-check-label" for="booking_marketing_consent" style="line-height:1.4;color:#475569;">
+                    Acepto recibir novedades, promociones y ofertas especiales de Omikika B&B (opcional).
+                  </label>
+                </div>
               </div>
             </div>
 

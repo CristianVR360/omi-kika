@@ -40,6 +40,7 @@ async function initDashboard() {
   setupExportTools();
   setupSettingsTab();
   setupRecommendationsTab();
+  setupPrivacyTab();
   // Cargar datos críticos en paralelo con reintentos automáticos
   await Promise.allSettled([
     loadStats(),
@@ -167,6 +168,10 @@ function setupTabNavigation() {
         if (titleDisplay) titleDisplay.textContent = 'Configuración del Alojamiento';
         if (breadcrumbDisplay) breadcrumbDisplay.textContent = 'Panel de Administración / Configuración';
         loadSettingsRooms();
+      } else if (targetId === 'view-privacy') {
+        if (titleDisplay) titleDisplay.textContent = 'Privacidad & Derechos ARCOP';
+        if (breadcrumbDisplay) breadcrumbDisplay.textContent = 'Panel de Administración / Ley N° 21.719';
+        loadPrivacyRequests();
       }
     });
   });
@@ -1763,6 +1768,182 @@ async function deleteRecommendationItem(id) {
 }
 
 
+/* =========================================================
+   GESTIÓN DE PRIVACIDAD & DERECHOS ARCOP (LEY N° 21.719)
+   ========================================================= */
+
+function setupPrivacyTab() {
+  const btnExport = document.getElementById('btn-privacy-export');
+  const btnAnonymize = document.getElementById('btn-privacy-anonymize');
+  const emailInput = document.getElementById('privacy-lookup-email');
+
+  if (btnExport) {
+    btnExport.addEventListener('click', () => {
+      const email = (emailInput?.value || '').trim();
+      if (!email) {
+        alert('Ingresa el correo del titular para exportar sus datos.');
+        return;
+      }
+      exportPortabilityData(email);
+    });
+  }
+
+  if (btnAnonymize) {
+    btnAnonymize.addEventListener('click', () => {
+      const email = (emailInput?.value || '').trim();
+      if (!email) {
+        alert('Ingresa el correo del titular para suprimir/anonimizar sus datos.');
+        return;
+      }
+      anonymizeSubjectData(email);
+    });
+  }
+}
+
+async function loadPrivacyRequests() {
+  const tbody = document.getElementById('privacy-tbody');
+  if (!tbody) return;
+
+  const { signal, isCurrent } = startRequest('privacy');
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #94a3b8;">Cargando solicitudes ARCOP...</td></tr>`;
+
+  try {
+    const { res, data: result } = await authFetchJsonWithRetry('/api/privacy-requests/admin', { signal });
+    if (!isCurrent()) return;
+
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    const list = result.data || [];
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #94a3b8;">No hay solicitudes ARCOP registradas aún.</td></tr>`;
+      return;
+    }
+
+    const typeLabels = {
+      access: 'Acceso',
+      rectification: 'Rectificación',
+      erasure: 'Supresión / Olvido',
+      objection: 'Oposición',
+      portability: 'Portabilidad',
+      blocking: 'Bloqueo'
+    };
+
+    const statusBadges = {
+      pending: '<span class="badge-status badge-pending">Pendiente</span>',
+      in_review: '<span class="badge-status" style="background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);">En revisión</span>',
+      completed: '<span class="badge-status badge-confirmed">Completada</span>',
+      rejected: '<span class="badge-status badge-cancelled">Rechazada</span>'
+    };
+
+    tbody.innerHTML = list.map(req => {
+      const created = req.created_at ? new Date(req.created_at).toLocaleDateString('es-CL') : '—';
+      return `
+        <tr>
+          <td>
+            <strong style="color:#fff;font-size:0.82rem;">${escapeHtml(req.tracking_code)}</strong>
+            <div style="font-size:0.75rem;color:#94a3b8;">${created}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:#fff;">${escapeHtml(req.full_name)}</div>
+            <div style="font-size:0.78rem;color:#94a3b8;">✉️ ${escapeHtml(req.email)}</div>
+            ${req.rut_or_id ? `<div style="font-size:0.75rem;color:#94a3b8;">ID: ${escapeHtml(req.rut_or_id)}</div>` : ''}
+          </td>
+          <td><span class="badge-channel">${escapeHtml(typeLabels[req.request_type] || req.request_type)}</span></td>
+          <td><div style="max-width:260px;white-space:normal;font-size:0.82rem;color:#cbd5e1;">${escapeHtml(req.details)}</div></td>
+          <td><strong style="color:#fbbf24;">${formatDateDDMMYYYY(req.due_date)}</strong></td>
+          <td>${statusBadges[req.status] || escapeHtml(req.status)}</td>
+          <td style="text-align:right;">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              ${req.status === 'pending' ? `<button class="btn-action btn-priv-status" data-id="${req.id}" data-status="in_review">En revisión</button>` : ''}
+              ${req.status !== 'completed' ? `<button class="btn-action btn-confirm btn-priv-status" data-id="${req.id}" data-status="completed">Completar</button>` : ''}
+              <button class="btn-action btn-priv-export" data-email="${escapeHtml(req.email)}">📦 Exportar JSON</button>
+              <button class="btn-action btn-cancel btn-priv-anonymize" data-email="${escapeHtml(req.email)}">🗑️ Suprimir PII</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-priv-status').forEach(btn => {
+      btn.addEventListener('click', () => updatePrivacyRequestStatus(btn.dataset.id, btn.dataset.status));
+    });
+    tbody.querySelectorAll('.btn-priv-export').forEach(btn => {
+      btn.addEventListener('click', () => exportPortabilityData(btn.dataset.email));
+    });
+    tbody.querySelectorAll('.btn-priv-anonymize').forEach(btn => {
+      btn.addEventListener('click', () => anonymizeSubjectData(btn.dataset.email));
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    console.error('Error cargando solicitudes ARCOP:', err);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #f87171; padding: 2rem;">
+      Error cargando solicitudes ARCOP (${escapeHtml(err.message)}).
+      <br/><br/>
+      <button onclick="loadPrivacyRequests()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">🔄 Reintentar</button>
+    </td></tr>`;
+  }
+}
+
+async function updatePrivacyRequestStatus(id, status) {
+  try {
+    const res = await authFetch(`/api/privacy-requests/admin/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Error actualizando solicitud.');
+    }
+    loadPrivacyRequests();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function exportPortabilityData(email) {
+  try {
+    const res = await authFetch(`/api/privacy-requests/admin/export?email=${encodeURIComponent(email)}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'No se pudo exportar los datos.');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `portabilidad-${email.replace(/[^a-z0-9]/gi, '_')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Error en portabilidad: ' + err.message);
+  }
+}
+
+async function anonymizeSubjectData(email) {
+  if (!confirm(`¿Confirmas SUPRIMIR / ANONIMIZAR todos los datos personales asociados a "${email}" conforme a la Ley N° 21.719? Esta acción no se puede deshacer.`)) {
+    return;
+  }
+  try {
+    const res = await authFetch('/api/privacy-requests/admin/anonymize', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'No se pudo suprimir los datos.');
+    }
+    alert(data.message);
+    loadPrivacyRequests();
+    loadReservations();
+  } catch (err) {
+    alert('Error al suprimir datos: ' + err.message);
+  }
+}
+
 // Exponer funciones criticas de carga al scope global para botones de reintento (onclick en ES Module)
 window.loadStats = loadStats;
 window.loadRooms = loadRooms;
@@ -1770,3 +1951,4 @@ window.loadReservations = loadReservations;
 window.loadGuests = loadGuests;
 window.loadInquiries = loadInquiries;
 window.loadAdminRecommendations = loadAdminRecommendations;
+window.loadPrivacyRequests = loadPrivacyRequests;

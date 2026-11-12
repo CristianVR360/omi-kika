@@ -9,6 +9,7 @@ import reservationsRouter from '../server/routes/reservations.js';
 import adminRouter from '../server/routes/admin.js';
 import inquiriesRouter from '../server/routes/inquiries.js';
 import recommendationsRouter from '../server/routes/recommendations.js';
+import privacyRouter from '../server/routes/privacy.js';
 
 // Omikika B&B API Server Entrypoint v3
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/reservations', reservationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/inquiries', inquiriesRouter);
 app.use('/api/recommendations', recommendationsRouter);
+app.use('/api/privacy-requests', privacyRouter);
 
 // Ruta de estado de la API
 app.get('/api/health', (req, res) => {

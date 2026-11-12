@@ -171,3 +171,74 @@ export const sendStatusUpdateEmail = async (reservation, roomName, newStatus) =>
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Envía acuse de recibo al titular y alerta al administrador por solicitud de Derechos ARCOP (Ley 21.719)
+ */
+export const sendPrivacyRequestEmails = async (privacyRequest) => {
+  const typeLabels = {
+    access: 'Acceso a datos personales',
+    rectification: 'Rectificación de datos',
+    erasure: 'Supresión / Cancelación (Olvido)',
+    objection: 'Oposición al tratamiento',
+    portability: 'Portabilidad de datos',
+    blocking: 'Bloqueo temporal de tratamiento'
+  };
+
+  const label = typeLabels[privacyRequest.request_type] || privacyRequest.request_type;
+  const esc = (str) => String(str || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+
+  if (!resend) {
+    console.log('[RESEND MOCK] Acuse ARCOP a:', privacyRequest.email, privacyRequest.tracking_code);
+    return { success: true, mock: true };
+  }
+
+  try {
+    await resend.emails.send({
+      from: `Privacidad Omikika B&B <${fromEmail}>`,
+      to: [privacyRequest.email],
+      subject: `Acuse de Recibo Solicitud ${esc(privacyRequest.tracking_code)} — Ley N° 21.719`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+          <h2 style="color: #1e293b; margin-top: 0;">Solicitud de Derechos de Protección de Datos Recibida</h2>
+          <p>Hola <strong>${esc(privacyRequest.full_name)}</strong>,</p>
+          <p>Confirmamos la recepción de tu solicitud conforme a la <strong>Ley N° 21.719</strong> sobre Protección de Datos Personales en Chile:</p>
+          <ul>
+            <li><strong>Código de seguimiento:</strong> ${esc(privacyRequest.tracking_code)}</li>
+            <li><strong>Derecho ejercido:</strong> ${esc(label)}</li>
+            <li><strong>Plazo máximo estimado de respuesta:</strong> ${esc(privacyRequest.due_date)} (15 días hábiles)</li>
+          </ul>
+          <p style="color: #475569;">Nuestro encargado de privacidad revisará tu requerimiento y te responderá a este mismo correo.</p>
+          <p style="font-size: 12px; color: #94a3b8;">Omikika B&B — Valentín Letelier 1055, Villarrica, Chile · reservas@omikika.cl</p>
+        </div>
+      `
+    });
+
+    await resend.emails.send({
+      from: `Sistema Privacidad Omikika <${fromEmail}>`,
+      to: [adminEmail],
+      subject: `[Solicitud ARCOP ${esc(privacyRequest.tracking_code)}] ${esc(label)} — ${esc(privacyRequest.full_name)}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h3 style="color: #b45309; margin-top: 0;">Nueva Solicitud ARCOP / Bloqueo (Ley N° 21.719)</h3>
+          <ul>
+            <li><strong>Código:</strong> ${esc(privacyRequest.tracking_code)}</li>
+            <li><strong>Tipo:</strong> ${esc(label)}</li>
+            <li><strong>Titular:</strong> ${esc(privacyRequest.full_name)}</li>
+            <li><strong>Email:</strong> ${esc(privacyRequest.email)}</li>
+            <li><strong>Teléfono:</strong> ${esc(privacyRequest.phone || 'No informado')}</li>
+            <li><strong>RUT / Documento:</strong> ${esc(privacyRequest.rut_or_id || 'No informado')}</li>
+            <li><strong>Fecha límite (15 días hábiles):</strong> ${esc(privacyRequest.due_date)}</li>
+          </ul>
+          <p><strong>Detalle:</strong><br/>${esc(privacyRequest.details)}</p>
+          <p>Gestiona esta solicitud desde la pestaña <strong>Privacidad / ARCOP</strong> en el Dashboard Administrativo.</p>
+        </div>
+      `
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error enviando correos de solicitud ARCOP:', error);
+    return { success: false, error: error.message };
+  }
+};
